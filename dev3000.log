@@ -1,0 +1,12 @@
+npm notice run app@0.1.0 dev
+npm notice run next dev
+▲ Next.js 16.3.4 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://172.17.20.8:3000
+- Environments: .env.local
+✓ Ready in 1864ms
+✓ Running next.config.ts took 97ms
+
+ GET / 200 in 409ms (next.js: 277ms, application-code: 132ms)
+ GET /api/vessels?terminal=ACT 200 in 194ms (next.js: 84ms, application-code: 110ms)
+[?25h
