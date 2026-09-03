@@ -127,14 +127,11 @@ export function YTTracker({ terminal }: { terminal: Terminal }) {
               }`}
             >
               <div
-                className={`w-full h-full flex items-center justify-center transition-all duration-500 ${
-                  cameraView === "angled" ? "transform rotateX(15deg) scale(0.95)" : ""
-                }`}
-                style={
-                  svgContent
-                    ? undefined
-                    : { background: "var(--bg-page)" }
-                }
+                className="w-full h-full flex items-center justify-center transition-all duration-500"
+                style={{
+                  transform: cameraView === "angled" ? "rotateX(15deg) scale(0.95)" : undefined,
+                  background: svgContent ? undefined : "var(--bg-page)",
+                }}
               >
                 {svgContent ? (
                   <div
@@ -203,11 +200,22 @@ export function YTTracker({ terminal }: { terminal: Terminal }) {
                         <span className="font-mono font-bold text-xs text-[var(--text-primary)]">
                           YT #{t.truckId}
                         </span>
+                        {t.status && (
+                          <span className="text-[9px] font-mono font-bold uppercase px-1 rounded bg-[var(--accent-blue)]/15 text-[var(--accent-blue)]">
+                            {t.status}
+                          </span>
+                        )}
                       </div>
                       <span className="text-[10px] font-mono text-[var(--text-tertiary)]">
                         {new Date(t.updateTime).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
                       </span>
                     </div>
+
+                    {t.driverName && (
+                      <div className="text-[10px] font-mono text-[var(--text-secondary)] truncate mb-0.5">
+                        {t.driverName}
+                      </div>
+                    )}
 
                     <div className="grid grid-cols-2 gap-1 text-[10px] font-mono text-[var(--text-secondary)] mt-1">
                       <div>

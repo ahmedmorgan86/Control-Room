@@ -24,6 +24,21 @@
   --accent-discharge: #ef4444;
   --accent-loading: #10b981;
   --accent-crane: #f59e0b;
+
+  --bg-vessel-viz: #e0f2fe;
+  --bg-vessel-header: #eff6ff;
+  --bg-operational: #eff6ff;
+  --bg-crane-table: #f8fafc;
+  --border-crane-row: #f1f5f9;
+
+  --wave-1: #7dd3fc;
+  --wave-2: #38bdf8;
+  --wave-3: #0ea5e9;
+  --wave-4: #0284c7;
+  --wave-5: #0369a1;
+  --wave-6: #075985;
+  --wave-7: #0c4a6e;
+  --wave-8: #082f49;
 }
 
 body.dark {
@@ -47,6 +62,21 @@ body.dark {
   --accent-discharge: #f87171;
   --accent-loading: #34d399;
   --accent-crane: #fbbf24;
+
+  --bg-vessel-viz: #071026;
+  --bg-vessel-header: #0d1b3a;
+  --bg-operational: #0d1b3a;
+  --bg-crane-table: #0b1329;
+  --border-crane-row: #131f3a;
+
+  --wave-1: #38bdf8;
+  --wave-2: #0ea5e9;
+  --wave-3: #0284c7;
+  --wave-4: #0369a1;
+  --wave-5: #075985;
+  --wave-6: #0c4a6e;
+  --wave-7: #082f49;
+  --wave-8: #051f33;
 }
 
 html,
@@ -81,6 +111,22 @@ body {
 }
 .animate-glow {
   animation: glow-pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.8); }
+}
+.animate-pulse-dot {
+  animation: pulse-dot 1.6s ease-in-out infinite;
+}
+
+@keyframes critical-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.45); }
+  50% { box-shadow: 0 0 0 6px rgba(220, 38, 38, 0); }
+}
+.animate-critical-pulse {
+  animation: critical-pulse 1.5s ease-in-out infinite;
 }
 
 .custom-scrollbar::-webkit-scrollbar {

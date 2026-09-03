@@ -32,9 +32,9 @@ Built with **Next.js 16 + React 19 + Tailwind CSS v4 + TypeScript**.
 | ACT/DCT_EQU_MONITOR      | Equipment Monitor    | Built          |
 | ACT/DCT_YARD_MONITOR     | Yard Monitor         | Built          |
 | ACT/DCT_YT_TRACKER       | YT Tracker           | Built          |
-| GATE_MONITOR             | Gate Monitor         | Under development |
-| YARD_MONITOR             | Yard Monitor         | Under development |
-| BERTH_MONITOR            | Berth Monitor        | Under development |
+| GATE_MONITOR             | Gate Monitor (overview) | Built          |
+| YARD_MONITOR             | Yard Monitor (overview) | Built          |
+| BERTH_MONITOR            | Berth Monitor        | Built          |
 
 > Smart TV compatibility notes: the app relies on CSS custom properties and is
 > styled with Tailwind CSS v4, whose utilities ship inside `@layer` blocks. Many
@@ -69,12 +69,22 @@ own `/api/*` routes, which forward to `BACKEND_URL`.
 | `GET /api/vessels?terminal={}`    | `<BACKEND>/api/vessels?...`     | 60s       |
 | `GET /api/yard?terminal={}`       | `<BACKEND>/api/yard?...`        | 60s       |
 | `GET /api/equipment?terminal={}`  | `<BACKEND>/api/equipment?...`   | 30s       |
+| `GET /api/gate?terminal={}`       | `<BACKEND>/api/gate?...`        | 30s       |
+| `GET /api/berth?terminal={}`      | `<BACKEND>/api/berth?...`       | 60s       |
+| `GET /api/yt-tracking?terminal={}`| `<BACKEND>/api/yt-tracking?...` | 5s        |
+| `GET /api/terminal-layout?terminal={}` | `<BACKEND>/TerminalLayout_{}.svg` | on mount |
 | `POST /api/auth/login`            | `<BACKEND>/api/auth/login`      | on demand  |
 | `GET /api/auth/session`           | local (signed cookie)           | on mount   |
 | `POST /api/auth/logout`           | local                            | on demand  |
 
 > Data is fetched via **HTTP polling** (not WebSocket). Each monitor aligns to
 > the interval in the table above.
+
+> `/api/gate` and `/api/berth` proxy to the original backend the same way the
+> other routes do. If `BACKEND_URL` doesn't yet implement those two endpoints,
+> the Gate Monitor and Berth Monitor screens fall back to sample data so the
+> UI stays usable — swap in real data by implementing the two routes on the
+> backend.
 
 ## Getting Started
 

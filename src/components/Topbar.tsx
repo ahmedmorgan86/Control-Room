@@ -75,6 +75,7 @@ export function Topbar({
   };
 
   const termScreens = myScreens.filter((k) => screenTerminal(k) === activeTerm);
+  const otherScreens = myScreens.filter((k) => screenTerminal(k) === null);
 
   const darkToggle = (
     <button
@@ -136,13 +137,16 @@ export function Topbar({
                     key={t}
                     ref={(el) => { termRef.current[t] = el; }}
                     onClick={() => {
-                      const suffix = activeScreen?.split("_").slice(1).join("_");
-                      const target = `${t}_${suffix}` as ScreenKey;
-                      if (myScreens.includes(target)) onNavigate(target);
-                      else {
-                        const fallback = myScreens.find((k) => k.startsWith(t));
-                        if (fallback) onNavigate(fallback);
+                      if (activeScreen && screenTerminal(activeScreen)) {
+                        const suffix = activeScreen.split("_").slice(1).join("_");
+                        const target = `${t}_${suffix}` as ScreenKey;
+                        if (myScreens.includes(target)) {
+                          onNavigate(target);
+                          return;
+                        }
                       }
+                      const fallback = myScreens.find((k) => k.startsWith(t));
+                      if (fallback) onNavigate(fallback);
                     }}
                     className={`relative z-10 px-5 py-1.5 text-[11px] font-mono font-black uppercase tracking-wider whitespace-nowrap transition-colors duration-300 rounded-lg ${
                       active ? "text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -154,28 +158,55 @@ export function Topbar({
               })}
             </div>
           )}
-          {terminals.length > 0 && <div className="h-5 w-[1px] bg-[var(--border)]" />}
-          <div className={`relative flex rounded-xl p-1 border border-[var(--border)] shadow-sm transition-colors duration-300 ${isDarkMode ? "bg-[#1a2744]" : "bg-slate-200"}`}>
-            <div
-              className="absolute top-1 bottom-1 rounded-lg bg-[var(--accent-blue)] transition-all duration-300 ease-in-out shadow-sm"
-              style={{ width: `${screenMark.width}px`, left: `${screenMark.left}px` }}
-            />
-            {termScreens.map((key) => {
-              const active = activeScreen === key;
-              return (
-                <button
-                  key={key}
-                  ref={(el) => { screenRef.current[key] = el; }}
-                  onClick={() => onNavigate(key)}
-                  className={`relative z-10 px-4 py-1.5 rounded-lg text-[11px] font-mono font-black uppercase tracking-wider whitespace-nowrap transition-colors duration-300 ${
-                    active ? "text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                  }`}
-                >
-                  {SCREEN_LABELS[key].replace(/^ACT |^DCT /, "")}
-                </button>
-              );
-            })}
-          </div>
+          {terminals.length > 0 && termScreens.length > 0 && <div className="h-5 w-[1px] bg-[var(--border)]" />}
+          {termScreens.length > 0 && (
+            <div className={`relative flex rounded-xl p-1 border border-[var(--border)] shadow-sm transition-colors duration-300 ${isDarkMode ? "bg-[#1a2744]" : "bg-slate-200"}`}>
+              <div
+                className="absolute top-1 bottom-1 rounded-lg bg-[var(--accent-blue)] transition-all duration-300 ease-in-out shadow-sm"
+                style={{
+                  width: `${screenMark.width}px`,
+                  left: `${screenMark.left}px`,
+                  opacity: activeScreen && termScreens.includes(activeScreen) ? 1 : 0,
+                }}
+              />
+              {termScreens.map((key) => {
+                const active = activeScreen === key;
+                return (
+                  <button
+                    key={key}
+                    ref={(el) => { screenRef.current[key] = el; }}
+                    onClick={() => onNavigate(key)}
+                    className={`relative z-10 px-4 py-1.5 rounded-lg text-[11px] font-mono font-black uppercase tracking-wider whitespace-nowrap transition-colors duration-300 ${
+                      active ? "text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                    }`}
+                  >
+                    {SCREEN_LABELS[key].replace(/^ACT |^DCT /, "")}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          {(terminals.length > 0 || termScreens.length > 0) && otherScreens.length > 0 && (
+            <div className="h-5 w-[1px] bg-[var(--border)]" />
+          )}
+          {otherScreens.length > 0 && (
+            <div className={`flex items-center gap-1 rounded-xl p-1 border border-[var(--border)] shadow-sm transition-colors duration-300 ${isDarkMode ? "bg-[#1a2744]" : "bg-slate-200"}`}>
+              {otherScreens.map((key) => {
+                const active = activeScreen === key;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => onNavigate(key)}
+                    className={`px-4 py-1.5 rounded-lg text-[11px] font-mono font-black uppercase tracking-wider whitespace-nowrap transition-colors duration-300 ${
+                      active ? "bg-[var(--accent-blue)] text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                    }`}
+                  >
+                    {SCREEN_LABELS[key]}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </nav>
 
         <div className="flex items-center justify-end gap-5 flex-1">
