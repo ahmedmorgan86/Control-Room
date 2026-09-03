@@ -4,9 +4,7 @@ npm notice run next dev -p 3100
 - Local:         http://localhost:3100
 - Network:       http://172.17.20.8:3100
 - Environments: .env.local
-✓ Ready in 1911ms
-✓ Running next.config.ts took 104ms
+✓ Ready in 1541ms
+✓ Running next.config.ts took 98ms
 
- GET /api/equipment?terminal=ACT 200 in 625ms (next.js: 455ms, application-code: 170ms)
- GET /api/equipment?terminal=ACT 200 in 98ms (next.js: 5ms, application-code: 93ms)
- GET / 200 in 254ms (next.js: 122ms, application-code: 132ms)
+[?25h
