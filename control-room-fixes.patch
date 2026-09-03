@@ -39,6 +39,65 @@ index c71a21c..8b4e1e3 100644
  ## Getting Started
  
  ```bash
+diff --git a/scripts/gen-tv-compat.js b/scripts/gen-tv-compat.js
+index 65ed1dd..7b048ea 100644
+--- a/scripts/gen-tv-compat.js
++++ b/scripts/gen-tv-compat.js
+@@ -8,7 +8,15 @@ const fs = require("fs");
+ const path = require("path");
+ 
+ const root = path.resolve(__dirname, "..");
+-const chunksDir = path.join(root, ".next", "static", "chunks");
++// Different hosts lay out the Turbopack/webpack CSS output differently
++// (and some, like Vercel, relocate/prune .next/static before this script
++// runs as part of packaging the deployment). Check every known location
++// instead of assuming just one.
++const candidateDirs = [
++  path.join(root, ".next", "static", "chunks"),
++  path.join(root, ".next", "static", "css"),
++  path.join(root, ".next", "server", "chunks"),
++];
+ const outFile = path.join(root, "public", "tv-compat.css");
+ 
+ function extractLayerBodies(css) {
+@@ -47,15 +55,33 @@ function captureBalanced(css, openIndex) {
+ }
+ 
+ function readChunks() {
+-  if (!fs.existsSync(chunksDir)) return [];
+-  return fs.readdirSync(chunksDir).filter((f) => f.endsWith(".css")).map((f) => path.join(chunksDir, f));
++  const files = [];
++  for (const dir of candidateDirs) {
++    if (!fs.existsSync(dir)) continue;
++    for (const f of fs.readdirSync(dir)) {
++      if (f.endsWith(".css")) files.push(path.join(dir, f));
++    }
++  }
++  return files;
+ }
+ 
+ function main() {
+   const files = readChunks();
+   if (files.length === 0) {
+-    console.error("No built CSS found in " + chunksDir + ". Run `next build` first.");
+-    process.exit(1);
++    // Don't fail the whole deployment over a Smart TV compatibility
++    // fallback. Some hosts (e.g. Vercel) relocate or prune .next/static
++    // before this chained script runs, so the compiled CSS may genuinely
++    // be unavailable here even though the app built successfully. Leave
++    // whatever public/tv-compat.css is already committed in place (it's
++    // a checked-in file, regenerated from local/CI builds) rather than
++    // aborting the build.
++    console.warn(
++      "[gen-tv-compat] No compiled CSS found in any of:\n  " +
++        candidateDirs.join("\n  ") +
++        "\n[gen-tv-compat] Skipping regeneration — keeping the existing public/tv-compat.css as-is. " +
++        "Run `npm run build` locally (or in CI where .next/static is intact) to refresh it.",
++    );
++    return;
+   }
+   const header = [
+     "/*",
 diff --git a/src/app/api/berth/route.ts b/src/app/api/berth/route.ts
 new file mode 100644
 index 0000000..50e61ed
