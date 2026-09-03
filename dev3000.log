@@ -4,7 +4,7 @@ npm notice run next dev
 - Local:         http://localhost:3000
 - Network:       http://172.17.20.8:3000
 - Environments: .env.local
-✓ Ready in 1897ms
-✓ Running next.config.ts took 97ms
+✓ Ready in 2.1s
+✓ Running next.config.ts took 106ms
 
-[?25h
+ GET / 200 in 444ms (next.js: 304ms, application-code: 140ms)

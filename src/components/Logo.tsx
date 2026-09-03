@@ -3,37 +3,23 @@
 export function Logo({ darkMode }: { darkMode: boolean }) {
   return (
     <div className="flex items-center gap-3 select-none">
-      <div
-        className="h-10 w-10 rounded-xl flex items-center justify-center shadow-lg ring-1 ring-cyan-500/40 relative overflow-hidden"
-        style={{
-          background: darkMode
-            ? "linear-gradient(135deg, #0284c7 0%, #0369a1 50%, #020617 100%)"
-            : "linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #0f172a 100%)",
-        }}
-      >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" strokeDasharray="3 3" />
-          <path d="M12 3v9l6 6" stroke="white" strokeWidth="2" strokeLinecap="round" />
-          <circle cx="12" cy="12" r="2" fill="#38bdf8" />
-        </svg>
+      {/* Official Logo 3-Color Blocks & Terminal Mark */}
+      <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-900/10 dark:bg-white/5 border border-slate-200 dark:border-slate-800">
+        <div className="w-3.5 h-3.5 rounded bg-[#ef4444] shadow-sm" title="Red Block" />
+        <div className="w-3.5 h-3.5 rounded bg-[#10b981] shadow-sm" title="Green Block" />
+        <div className="w-3.5 h-3.5 rounded bg-[#2563eb] shadow-sm" title="Blue Block" />
       </div>
       <div className="flex flex-col">
-        <div className="flex items-center gap-2">
-          <span
-            className="font-mono font-black tracking-[0.15em] text-xs leading-tight"
-            style={{ color: darkMode ? "#f8fafc" : "#0f172a" }}
-          >
-            CONTROL ROOM
-          </span>
-          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-black bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            100% SYNCED
-          </span>
-        </div>
         <span
-          className="font-mono font-bold tracking-[0.2em] text-[8px] uppercase mt-0.5 text-cyan-500"
+          className="font-mono font-black tracking-[0.05em] text-xs leading-tight"
+          style={{ color: darkMode ? "#f8fafc" : "#0f172a" }}
         >
-          Live backend: 172.16.20.249:3000
+          Terminal Monitoring System
+        </span>
+        <span
+          className="font-mono font-bold tracking-[0.15em] text-[9px] uppercase mt-0.5 text-[var(--text-secondary)]"
+        >
+          Control Room · Port Operations
         </span>
       </div>
     </div>
