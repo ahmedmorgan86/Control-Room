@@ -19,16 +19,12 @@ export async function POST(req: NextRequest) {
   let user: AuthUser | null = null;
 
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3000);
     const res = await fetch(`${BACKEND}/api/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),
       cache: "no-store",
-      signal: controller.signal,
     });
-    clearTimeout(timeoutId);
     if (res.ok) {
       const json = await res.json();
       const u = json.user ?? json;
@@ -42,24 +38,8 @@ export async function POST(req: NextRequest) {
     user = null;
   }
 
-  // Fallback demo user if backend is offline or unreachable so app is fully testable and usable
   if (!user) {
-    user = {
-      username: username,
-      full_name: `${username.toUpperCase()} (Demo Operator)`,
-      screens: {
-        ACT_VSL_MONITOR: true,
-        DCT_VSL_MONITOR: true,
-        ACT_EQU_MONITOR: true,
-        DCT_EQU_MONITOR: true,
-        ACT_YARD_MONITOR: true,
-        DCT_YARD_MONITOR: true,
-        ACT_YT_TRACKER: true,
-        DCT_YT_TRACKER: true,
-        BERTH_MONITOR: true,
-        GATE_MONITOR: true,
-      },
-    };
+    return NextResponse.json({ error: "Invalid username or password" }, { status: 401 });
   }
 
   const front = toFrontendUser(user);

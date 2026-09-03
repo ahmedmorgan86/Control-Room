@@ -7,10 +7,10 @@ export async function GET(req: NextRequest) {
   try {
     const res = await proxy(`/api/gate?terminal=${ok ? terminal : "ACT"}`, undefined, req.headers);
     if (!res.ok) {
-      return NextResponse.json({ trucks: [] }, { status: 200 });
+      return NextResponse.json({ trucks: [] }, { status: res.status });
     }
     const body = await res.json().catch(() => ({ trucks: [] }));
-    return NextResponse.json(body, { status: 200 });
+    return NextResponse.json(body, { status: res.status });
   } catch {
     return NextResponse.json({ trucks: [] }, { status: 200 });
   }
