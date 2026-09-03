@@ -4,10 +4,10 @@ export function Logo({ darkMode }: { darkMode: boolean }) {
   return (
     <div className="flex items-center gap-3 select-none">
       <div
-        className="h-10 w-10 rounded-xl flex items-center justify-center shadow-md ring-1 ring-cyan-500/30 relative overflow-hidden"
+        className="h-10 w-10 rounded-xl flex items-center justify-center shadow-lg ring-1 ring-cyan-500/40 relative overflow-hidden"
         style={{
           background: darkMode
-            ? "linear-gradient(135deg, #0284c7 0%, #0369a1 50%, #0f172a 100%)"
+            ? "linear-gradient(135deg, #0284c7 0%, #0369a1 50%, #020617 100%)"
             : "linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #0f172a 100%)",
         }}
       >
@@ -18,16 +18,22 @@ export function Logo({ darkMode }: { darkMode: boolean }) {
         </svg>
       </div>
       <div className="flex flex-col">
+        <div className="flex items-center gap-2">
+          <span
+            className="font-mono font-black tracking-[0.15em] text-xs leading-tight"
+            style={{ color: darkMode ? "#f8fafc" : "#0f172a" }}
+          >
+            CONTROL ROOM
+          </span>
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-black bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            100% SYNCED
+          </span>
+        </div>
         <span
-          className="font-mono font-black tracking-[0.2em] text-xs leading-tight"
-          style={{ color: darkMode ? "#f8fafc" : "#0f172a" }}
+          className="font-mono font-bold tracking-[0.2em] text-[8px] uppercase mt-0.5 text-cyan-500"
         >
-          COMMAND HUB
-        </span>
-        <span
-          className="font-mono font-bold tracking-[0.25em] text-[8px] uppercase mt-0.5 text-cyan-500"
-        >
-          Aero-Maritime TMS
+          Live backend: 172.16.20.249:3000
         </span>
       </div>
     </div>
