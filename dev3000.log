@@ -4,8 +4,8 @@ npm notice run next dev
 - Local:         http://localhost:3000
 - Network:       http://172.17.20.8:3000
 - Environments: .env.local
-✓ Ready in 620ms
-✓ Running next.config.ts took 62ms
+✓ Ready in 1909ms
+✓ Running next.config.ts took 100ms
 
- GET /api/auth/session 401 in 389ms (next.js: 366ms, application-code: 23ms)
- GET / 200 in 492ms (next.js: 237ms, application-code: 255ms)
+ GET / 200 in 410ms (next.js: 277ms, application-code: 133ms)
+[?25h

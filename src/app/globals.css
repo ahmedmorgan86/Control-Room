@@ -12,9 +12,10 @@
   --bg-progress: #e2e8f0;
   --bg-nav-hover: rgba(37, 99, 235, 0.08);
 
-  --border: #e2e8f0;
-  --border-light: #f1f5f9;
-  --border-topbar: #e2e8f0;
+  --border: #cbd5e1;
+  --border-light: #e2e8f0;
+  --border-topbar: #cbd5e1;
+  --border-crane-row: #f1f5f9;
 
   --text-primary: #0f172a;
   --text-secondary: #475569;
@@ -25,34 +26,29 @@
   --accent-loading: #10b981;
   --accent-crane: #f59e0b;
 
-  --bg-vessel-viz: #e0f2fe;
-  --bg-vessel-header: #eff6ff;
-  --bg-operational: #eff6ff;
-  --bg-crane-table: #f8fafc;
-  --border-crane-row: #f1f5f9;
-
-  --wave-1: #7dd3fc;
-  --wave-2: #38bdf8;
-  --wave-3: #0ea5e9;
-  --wave-4: #0284c7;
-  --wave-5: #0369a1;
-  --wave-6: #075985;
-  --wave-7: #0c4a6e;
-  --wave-8: #082f49;
+  --wave-1: #38bdf8;
+  --wave-2: #0ea5e9;
+  --wave-3: #0284c7;
+  --wave-4: #0369a1;
+  --wave-5: #075985;
+  --wave-6: #0c4a6e;
+  --wave-7: #082f49;
+  --wave-8: #03162b;
 }
 
 body.dark {
-  --bg-page: #030712;
-  --bg-panel: #0b1329;
-  --bg-header: #111c38;
-  --bg-topbar: #030712;
-  --bg-input: #111c38;
+  --bg-page: #02040a;
+  --bg-panel: #070d1d;
+  --bg-header: #0d152e;
+  --bg-topbar: #02040a;
+  --bg-input: #0d152e;
   --bg-progress: #1e293b;
-  --bg-nav-hover: rgba(56, 189, 248, 0.12);
+  --bg-nav-hover: rgba(56, 189, 248, 0.15);
 
   --border: #1e293b;
-  --border-light: #131f3a;
+  --border-light: #111a33;
   --border-topbar: #1e293b;
+  --border-crane-row: #0d152e;
 
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
@@ -63,20 +59,14 @@ body.dark {
   --accent-loading: #34d399;
   --accent-crane: #fbbf24;
 
-  --bg-vessel-viz: #071026;
-  --bg-vessel-header: #0d1b3a;
-  --bg-operational: #0d1b3a;
-  --bg-crane-table: #0b1329;
-  --border-crane-row: #131f3a;
-
-  --wave-1: #38bdf8;
-  --wave-2: #0ea5e9;
-  --wave-3: #0284c7;
-  --wave-4: #0369a1;
+  --wave-1: #0284c7;
+  --wave-2: #0369a1;
+  --wave-3: #075985;
+  --wave-4: #0c4a6e;
   --wave-5: #075985;
   --wave-6: #0c4a6e;
   --wave-7: #082f49;
-  --wave-8: #051f33;
+  --wave-8: #03162b;
 }
 
 html,
@@ -97,36 +87,12 @@ body {
   font-family: var(--font-mono);
 }
 
-@keyframes radar-sweep {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+@keyframes aura-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.8)); }
+  50% { opacity: 0.5; transform: scale(1.25); filter: drop-shadow(0 0 12px rgba(56, 189, 248, 1)); }
 }
-.animate-radar {
-  animation: radar-sweep 4s linear infinite;
-}
-
-@keyframes glow-pulse {
-  0%, 100% { opacity: 0.6; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.05); }
-}
-.animate-glow {
-  animation: glow-pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(0.8); }
-}
-.animate-pulse-dot {
-  animation: pulse-dot 1.6s ease-in-out infinite;
-}
-
-@keyframes critical-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.45); }
-  50% { box-shadow: 0 0 0 6px rgba(220, 38, 38, 0); }
-}
-.animate-critical-pulse {
-  animation: critical-pulse 1.5s ease-in-out infinite;
+.animate-aura-pulse {
+  animation: aura-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
@@ -137,9 +103,9 @@ body {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(56, 189, 248, 0.2);
+  background: rgba(56, 189, 248, 0.3);
   border-radius: 10px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(56, 189, 248, 0.4);
+  background: rgba(56, 189, 248, 0.6);
 }
