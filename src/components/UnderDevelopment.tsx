@@ -20,7 +20,6 @@ export function UnderDevelopment({ name }: { name: string }) {
   return (
     <div className="flex-1 flex flex-col items-center justify-center bg-[var(--bg-page)]">
       <div className="text-center">
-        <div className="w-12 h-12 mx-auto mb-3 border-2 border-[var(--border)] border-t-[var(--accent-blue)] rounded-full animate-spin" />
         <p className="text-xs font-mono font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] mb-2">
           Module Under Development
         </p>

@@ -173,6 +173,14 @@ body {
   animation: critical-pulse 1.8s ease-in-out infinite;
 }
 
+@keyframes zone-breathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.92; }
+}
+.animate-zone-breathe {
+  animation: zone-breathe 4s ease-in-out infinite;
+}
+
 .custom-scrollbar::-webkit-scrollbar {
   width: 5px;
   height: 5px;

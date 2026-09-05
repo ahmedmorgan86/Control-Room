@@ -14,22 +14,22 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
 };
 
 export const BLOCK_COLORS: Record<BlockType, string> = {
-  DG: "#b23a2e",
-  RF: "#3d6e8c",
-  EMPTY: "#8a8578",
-  IMP_EXP: "#6d5b8a",
-  IMP: "#3f7d52",
-  EXP: "#a8471d",
-  CFS: "#4f6474",
-  INSP: "#9c6b12",
-  NEGLECT: "#8a3226",
-  OTHER: "#a39e92",
+  DG: "#be185d",
+  RF: "#3b82f6",
+  EMPTY: "#94a3b8",
+  IMP_EXP: "#4d7c0f",
+  IMP: "#0f766e",
+  EXP: "#10b981",
+  CFS: "#6366f1",
+  INSP: "#06b6d4",
+  NEGLECT: "#a855f7",
+  OTHER: "rgba(255,255,255,0.1)",
 };
 
 export const SEVERITY_COLORS: Record<Severity, string> = {
-  CRITICAL: "#b23a2e",
-  HIGH: "#a8471d",
-  MEDIUM: "#9c6b12",
+  CRITICAL: "#ef4444",
+  HIGH: "#f97316",
+  MEDIUM: "#eab308",
   LOW: "#8a7a3a",
 };
 
@@ -44,13 +44,13 @@ export const EQU_LABELS: Record<EquType, string> = {
 };
 
 export const EQU_ACCENTS: Record<EquType, string> = {
-  QC: "#a8471d",
-  YT: "#3f7d52",
-  RTG: "#9c6b12",
-  RS: "#4f6474",
-  TL: "#6d5b8a",
-  SUPPORT: "#8a8578",
-  UNK: "#a39e92",
+  QC: "#0046af",
+  YT: "#10b981",
+  RTG: "#f97316",
+  RS: "#0ea5e9",
+  TL: "#8b5cf6",
+  SUPPORT: "#64748b",
+  UNK: "#64748b",
 };
 
 export function formatCount(v: number | undefined | null): string {
@@ -72,18 +72,18 @@ export function formatArrival(iso: string | null | undefined): string {
 }
 
 export function fillColor(ratio: number): string {
-  if (ratio >= 0.9) return "#b23a2e";
-  if (ratio >= 0.75) return "#a8471d";
-  if (ratio >= 0.6) return "#9c6b12";
-  return "#3f7d52";
+  if (ratio > 0.85) return "#ef4444";
+  if (ratio > 0.7) return "#eab308";
+  if (ratio > 0.5) return "#22c55e";
+  return "#3b82f6";
 }
 
 export function tttColor(min: number | null | undefined): string {
-  if (min == null) return "#a39e92";
-  if (min >= 30) return "#b23a2e";
-  if (min >= 20) return "#a8471d";
-  if (min >= 10) return "#9c6b12";
-  return "#3f7d52";
+  if (min == null) return "#94a3b8";
+  if (min >= 30) return "#ef4444";
+  if (min >= 20) return "#f97316";
+  if (min >= 10) return "#eab308";
+  return "#22c55e";
 }
 
 export function tttLabel(min: number | null | undefined): string {

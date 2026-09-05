@@ -3,13 +3,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Vessel } from "@/lib/types";
 import { usePolling } from "@/lib/usePolling";
-import { ProgressBar } from "@/components/ui";
 import { formatArrival } from "@/lib/ui";
 import { MonitorHeader } from "@/components/MonitorHeader";
 
 function compareCranes(a: { layoutRank: number; craneId: string }, b: { layoutRank: number; craneId: string }) {
   return a.layoutRank - b.layoutRank || a.craneId.localeCompare(b.craneId);
 }
+
+const isQcTypeA = (craneId: string) => ["QC09", "QC82"].includes(craneId);
 
 function VesselVisualization({
   cranes,
@@ -63,12 +64,6 @@ function VesselVisualization({
             }
             .qc-conflict-box { animation: conflictPulseCore 1.5s infinite; transform-origin: center; }
             .qc-conflict-ring { animation: conflictPulseRing 1.5s infinite; transform-origin: center; }
-            @keyframes bodySway {
-              0%,100% { transform: rotate(0deg); }
-              25% { transform: rotate(0.4deg); }
-              75% { transform: rotate(-0.4deg); }
-            }
-            .vessel-body { animation: bodySway 6s ease-in-out infinite; transform-origin: 50% 85%; }
           `}</style>
 
           {activeCranes.map((crane, idx) => {
@@ -78,22 +73,18 @@ function VesselVisualization({
               <g key={crane.craneId} transform={`translate(${x},0)`}>
                 {conflict && (
                   <g>
-                    <rect className="qc-conflict-ring" x="-16" y="60" width="32" height="70" fill="none" stroke="var(--distress)" rx="4" />
-                    <rect className="qc-conflict-box" x="-12" y="64" width="24" height="62" fill="rgba(178,58,46,0.12)" stroke="var(--distress)" strokeWidth="1.5" rx="3" />
+                    <rect className="qc-conflict-ring" x="-16" y="60" width="32" height="70" fill="none" stroke="#ef4444" rx="4" />
+                    <rect className="qc-conflict-box" x="-12" y="64" width="24" height="62" fill="rgba(239,68,68,0.12)" stroke="#ef4444" strokeWidth="1.5" rx="3" />
                   </g>
                 )}
-                <text x="0" y="20" textAnchor="middle" fontSize="14" fontFamily="monospace" fill="var(--text-secondary)">
-                  {crane.craneId}
-                </text>
-                <g className="qc-trolley">
-                  <rect x="-30" y="28" width="60" height="12" fill="var(--text-tertiary)" rx="2" />
-                  <rect x="-10" y="38" width="20" height="26" fill="#475569" rx="2" />
-                  <rect x="-16" y="66" width="32" height="4" fill="#334155" />
-                </g>
-                <g className="qc-gantry">
-                  <rect x="-40" y="16" width="80" height="8" rx="2" fill="#475569" />
-                  <rect x="-36" y="16" width="6" height="60" fill="#475569" />
-                  <rect x="30" y="16" width="6" height="60" fill="#475569" />
+                <g filter="drop-shadow(0 2px 4px rgba(0,0,0,0.3))">
+                  <rect x="-44" y="12" width="88" height="10" rx="3" fill={isQcTypeA(crane.craneId) ? "#F59E0B" : "#2563EB"} />
+                  <rect x="-40" y="12" width="8" height="80" fill="#475569" />
+                  <rect x="32" y="12" width="8" height="80" fill="#475569" />
+                  <rect x="-12" y="22" width="24" height="14" fill="#64748b" rx="2" />
+                  <rect x="-6" y="36" width="12" height="28" fill="#94a3b8" />
+                  <rect x="-18" y="64" width="36" height="6" rx="2" fill="#334155" />
+                  <line x1="0" y1="30" x2="0" y2="64" stroke="#94a3b8" strokeWidth="2" />
                 </g>
               </g>
             );
@@ -168,91 +159,129 @@ function VesselCard({ vessel }: { vessel: Vessel }) {
 
   const sortedCranes = useMemo(() => [...vessel.cranes].sort(compareCranes), [vessel.cranes]);
 
+  const totalDone = vessel.totalDone;
+  const totalMoves = vessel.totalMoves;
+  const overallPct = totalMoves > 0 ? Math.min(100, Math.round((totalDone / totalMoves) * 100)) : 0;
+
   return (
-    <div className="flex flex-col h-full bg-[var(--bg-panel)] border border-[var(--border-light)] rounded-sm overflow-hidden shadow-sm">
-      <div className="bg-[var(--bg-vessel-header)] border-b border-[var(--border-crane-row)] px-4 py-2">
+    <div className="flex flex-col h-full bg-[var(--bg-panel)] border border-[var(--border)] rounded-lg overflow-hidden shadow-md shadow-black/5 dark:shadow-[0_0_30px_rgba(37,99,235,0.25)]">
+      {/* Header */}
+      <div className="bg-[var(--bg-vessel-header)] border-b border-[var(--border-crane-row)] px-4 py-3">
         <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-mono font-black text-sm text-[var(--text-primary)] uppercase">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xl font-extrabold text-[var(--text-primary)] uppercase tracking-wide truncate">
                 {vessel.vesselName}
               </span>
-              <span className="text-[9px] font-mono text-[var(--text-tertiary)] uppercase">Voy {vessel.voyageNumber}</span>
             </div>
-            <div className="text-[10px] font-mono text-[var(--text-secondary)] mt-0.5">
-              Arr: {formatArrival(vessel.arrivalTime)}
-              <span className="text-[var(--text-tertiary)]"> · {vessel.cranes.length} QCs</span>
+            <div className="flex items-center gap-2 mt-1 text-[17.5px] font-mono text-[var(--text-secondary)]">
+              <span>VOY {vessel.voyageNumber}</span>
+              <span className="text-[var(--text-tertiary)]">│</span>
+              <span>ARR {formatArrival(vessel.arrivalTime)}</span>
+              <span className="text-[var(--text-tertiary)]">│</span>
+              <span>QC {vessel.cranes.length}</span>
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-[9px] font-mono uppercase tracking-wider text-[var(--text-tertiary)]">GMPH</div>
-            <div className="font-mono font-black text-lg leading-none text-[var(--text-primary)] tabular-nums">{vessel.gmph}</div>
+          <div className="w-20 aspect-square bg-[var(--bg-gmph)] rounded-lg flex flex-col items-center justify-center shrink-0 ml-3 border border-[var(--border)]">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[var(--text-tertiary)]">GMPH</span>
+            <span className="text-2xl font-mono font-black text-[var(--accent-blue)] leading-none tabular-nums">{vessel.gmph}</span>
           </div>
         </div>
-        <div className="grid grid-cols-3 gap-2 mt-2">
-          <Bar label="LOAD" done={vessel.loadingDone} total={vessel.loadingTotal} color="var(--accent-loading)" />
-          <Bar label="DISCH" done={vessel.dischargingDone} total={vessel.dischargingTotal} color="var(--accent-discharge)" />
-          <Bar label="TOTAL" done={vessel.totalDone} total={vessel.totalMoves} color="var(--signal)" />
+        {/* Single overall progress bar */}
+        <div className="mt-3">
+          <div className="flex items-center justify-between text-[10px] font-mono text-[var(--text-secondary)] mb-1">
+            <span className="uppercase tracking-wider">Overall Progress</span>
+            <span className="font-bold tabular-nums">{totalDone}/{totalMoves} — {overallPct}%</span>
+          </div>
+          <div className="relative h-3 w-full rounded-full overflow-hidden bg-[var(--border)]">
+            <div
+              className="absolute inset-y-0 left-0 bg-linear-to-r from-[#2563EB] to-[#1D4ED8] rounded-full transition-all duration-700"
+              style={{ width: `${overallPct}%` }}
+            />
+            {overallPct > 15 && (
+              <span className="absolute inset-0 flex items-center justify-center text-[9px] font-mono font-bold text-white drop-shadow-sm">
+                {overallPct}%
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
+      {/* Vessel Visualization */}
       <div className="flex-1 min-h-0 relative" style={{ minHeight: "240px" }}>
         <VesselVisualization cranes={vessel.cranes} vesselName={vessel.vesselName} duplicateCraneIds={duplicateIds} />
       </div>
 
-      <div className="bg-[var(--bg-crane-table)] border-t border-[var(--border-crane-row)] px-4 py-2">
-        <div className="text-[9px] font-mono uppercase tracking-widest text-[var(--text-tertiary)] mb-1">Cranes</div>
-        <div className="overflow-y-auto custom-scrollbar" style={{ maxHeight: "160px" }}>
-          <table className="w-full text-left text-[11px] font-mono">
-            <thead>
-              <tr className="text-[9px] uppercase text-[var(--text-tertiary)]">
-                <th className="py-1 pr-2">QC</th>
-                <th className="py-1 pr-2 w-[30%]">Progress</th>
-                <th className="py-1 px-2 text-right">Moves</th>
-                <th className="py-1 px-2 text-right">Load</th>
-                <th className="py-1 px-2 text-right">Disch</th>
-                <th className="py-1 pl-2 text-right">MPH</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedCranes.map((c) => (
+      {/* Crane Table */}
+      <div className="bg-[var(--bg-crane-table)] border-t border-[var(--border-crane-row)]">
+        <table id="crane-details-table" className="w-full text-sm">
+          <thead>
+            <tr className="text-[var(--text-tertiary)] text-xs uppercase tracking-wider text-left border-b border-[var(--border)]">
+              <th className="px-4 py-2 font-semibold">Crane</th>
+              <th className="px-4 py-2 font-semibold">Progress</th>
+              <th className="px-4 py-2 font-semibold text-right">Load</th>
+              <th className="px-4 py-2 font-semibold text-right">Disch</th>
+              <th className="px-4 py-2 font-semibold text-right">MPH</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sortedCranes.map((c) => {
+              const conflict = duplicateIds.has(c.craneId);
+              const done = c.movesDone >= c.movesTotal;
+              const typeA = isQcTypeA(c.craneId);
+              const progressPct = c.movesTotal > 0 ? Math.round((c.movesDone / c.movesTotal) * 100) : 0;
+
+              return (
                 <tr
                   key={c.craneId}
-                  className={`border-t border-[var(--border-crane-row)] ${duplicateIds.has(c.craneId) ? "text-[var(--accent-crane)]" : ""}`}
+                  className={`border-b border-[var(--border-crane-row)] hover:bg-[var(--bg-header)] transition-colors ${done ? "opacity-50" : ""} ${conflict ? "bg-red-500/10" : ""}`}
                 >
-                  <td className={`py-1.5 pr-2 font-bold ${duplicateIds.has(c.craneId) ? "text-[var(--accent-crane)]" : ""}`}>
-                    {c.craneId}
+                  <td className="px-4 py-2">
+                    <span className="font-mono font-bold" style={{ color: conflict ? "var(--accent-crane)" : typeA ? "#F59E0B" : "#2563EB" }}>
+                      {c.craneId}
+                    </span>
+                    {conflict && (
+                      <span className="inline-flex items-center justify-center px-2 py-0.5 text-[10px] bg-red-600 text-white rounded font-black animate-pulse shrink-0 leading-none ml-2 -mt-[1px]">
+                        CONFLICT
+                      </span>
+                    )}
+                    {done && !conflict && (
+                      <span className="inline-flex items-center justify-center px-2 py-0.5 text-[10px] bg-emerald-600 text-white rounded font-black shrink-0 leading-none ml-2 -mt-[1px]">
+                        DONE
+                      </span>
+                    )}
                   </td>
-                  <td className="py-1.5 pr-2">
-                    <div className="flex items-center gap-1.5">
-                      <ProgressBar done={c.movesDone} total={c.movesTotal} color="var(--accent-blue)" />
-                      <span className="tabular-nums text-[var(--text-secondary)] whitespace-nowrap">
+                  <td className="px-4 py-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-16 h-1.5 bg-[var(--border-light)] rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-[var(--accent-blue)] transition-all duration-500"
+                          style={{ width: `${progressPct}%` }}
+                        />
+                      </div>
+                      <span className="text-[var(--text-secondary)] tabular-nums whitespace-nowrap">
                         {c.movesDone}/{c.movesTotal}
+                      </span>
+                      <span className="font-mono font-bold tabular-nums" style={{ color: "var(--accent-blue)" }}>
+                        {progressPct}%
                       </span>
                     </div>
                   </td>
-                  <td className="py-1.5 px-2 text-right tabular-nums">{c.movesDone}<span className="text-[var(--text-tertiary)]">/{c.movesTotal}</span></td>
-                  <td className="py-1.5 px-2 text-right tabular-nums text-[var(--accent-loading)]">{c.loadingDone}<span className="text-[var(--text-tertiary)]">/{c.loadingTotal}</span></td>
-                  <td className="py-1.5 px-2 text-right tabular-nums text-[var(--accent-discharge)]">{c.dischargingDone}<span className="text-[var(--text-tertiary)]">/{c.dischargingTotal}</span></td>
-                  <td className="py-1.5 pl-2 text-right tabular-nums">{c.mph}</td>
+                  <td className="px-4 py-2 text-right tabular-nums">{c.loadingDone}<span className="text-[var(--text-tertiary)]">/{c.loadingTotal}</span></td>
+                  <td className="px-4 py-2 text-right tabular-nums">{c.dischargingDone}<span className="text-[var(--text-tertiary)]">/{c.dischargingTotal}</span></td>
+                  <td className="px-4 py-2 text-right">
+                    <span className="tabular-nums font-bold" style={{
+                      color: c.mph >= 25 ? "var(--accent-loading)" : c.mph >= 15 ? "var(--accent-blue)" : c.mph > 0 ? "#D97706" : "var(--text-tertiary)"
+                    }}>
+                      {c.mph}
+                    </span>
+                  </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
-    </div>
-  );
-}
-
-function Bar({ label, done, total, color }: { label: string; done: number; total: number; color: string }) {
-  return (
-    <div>
-      <div className="flex items-center justify-between text-[9px] font-mono uppercase text-[var(--text-tertiary)] mb-0.5">
-        <span>{label}</span>
-        <span className="tabular-nums text-[var(--text-secondary)]">{done}/{total}</span>
-      </div>
-      <ProgressBar done={done} total={total} color={color} />
     </div>
   );
 }
