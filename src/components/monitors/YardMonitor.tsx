@@ -1,10 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { BlockType, Terminal, YardBlock, YardData } from "@/lib/types";
 import { usePolling } from "@/lib/usePolling";
-import { Ring } from "@/components/ui";
+import { Ring, LiveStatus } from "@/components/ui";
 import { BLOCK_COLORS, SEVERITY_COLORS, formatCount } from "@/lib/ui";
+import { playCriticalAlert } from "@/lib/alertSound";
+import { ScreenIcon } from "@/components/ScreenIcon";
 
 function BlockCard({ block }: { block: YardBlock }) {
   const color = BLOCK_COLORS[block.blockType];
@@ -13,7 +15,7 @@ function BlockCard({ block }: { block: YardBlock }) {
 
   return (
     <div
-      className={`flex flex-col bg-[var(--bg-panel)] border rounded-md p-2 gap-1 overflow-hidden ${isCritical ? "animate-critical-pulse" : ""}`}
+      className={`flex flex-col bg-[var(--bg-panel)] border rounded-sm p-2 gap-1 overflow-hidden ${isCritical ? "animate-critical-pulse" : ""}`}
       style={{ borderColor: block.violationCount > 0 && sevColor ? sevColor : "var(--border-light)", boxShadow: block.violationCount > 0 && sevColor ? `0 0 8px ${sevColor}33` : undefined }}
     >
       <div className="flex items-center justify-between">
@@ -46,7 +48,7 @@ function BlockCard({ block }: { block: YardBlock }) {
             <span className="text-[9px] font-mono text-[var(--accent-discharge)]">⚠ {block.violationCount}</span>
           )}
           {block.neglectCount > 0 && (
-            <span className="text-[9px] font-mono text-amber-500">Neglect {block.neglectCount}</span>
+            <span className="text-[9px] font-mono text-[var(--beacon)]">Neglect {block.neglectCount}</span>
           )}
         </div>
       </div>
@@ -57,7 +59,24 @@ function BlockCard({ block }: { block: YardBlock }) {
 const BLOCK_ORDER: BlockType[] = ["DG", "RF", "EMPTY", "IMP_EXP", "IMP", "EXP", "CFS", "INSP", "NEGLECT", "OTHER"];
 
 export function YardMonitor({ terminal }: { terminal: Terminal }) {
-  const { data, loading, error, lastUpdated } = usePolling<YardData>(`/api/yard?terminal=${terminal}`, 60000);
+  const { data, loading, error, lastUpdated, now } = usePolling<YardData>(`/api/yard?terminal=${terminal}`, 60000);
+  const [muted, setMuted] = useState(false);
+  const knownCriticalRef = useRef<Set<string> | null>(null);
+
+  useEffect(() => {
+    if (!data) return;
+    const currentCritical = new Set(
+      data.violations.filter((v) => v.severity === "CRITICAL").map((v) => `${v.cntrNo}|${v.type}`),
+    );
+    const previous = knownCriticalRef.current;
+    // Skip the very first load — only alert on violations that appear
+    // *after* the screen has already established a baseline.
+    if (previous) {
+      const hasNew = [...currentCritical].some((key) => !previous.has(key));
+      if (hasNew && !muted) playCriticalAlert();
+    }
+    knownCriticalRef.current = currentCritical;
+  }, [data, muted]);
 
   const grouped = useMemo(() => {
     const m = new Map<BlockType, YardBlock[]>();
@@ -94,13 +113,14 @@ export function YardMonitor({ terminal }: { terminal: Terminal }) {
       <div className="flex-1 min-h-0 flex flex-col gap-2">
         <div className="flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-[var(--text-tertiary)]">
-            <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse-dot" />
+            <ScreenIcon kind="YARD" className="w-6 h-6" style={{ color: "var(--signal)" }} />
+            <span className="inline-block w-2 h-2 rounded-full bg-[var(--safe)] animate-pulse-dot" />
             Yard Overview
           </div>
           <div className="flex items-center gap-3">
             <span className="text-[10px] font-mono text-[var(--text-secondary)]">Fill {Math.round(summary.overallFillRatio * 100)}%</span>
             <span className="text-[10px] font-mono text-[var(--text-secondary)]">Active {formatCount(summary.totalOccupied)}/{formatCount(summary.totalCapacity)}</span>
-            {lastUpdated && <span className="text-[10px] font-mono text-[var(--text-tertiary)]">{lastUpdated.toLocaleTimeString()}</span>}
+            <LiveStatus lastUpdated={lastUpdated} now={now} error={error} intervalMs={60000} />
           </div>
         </div>
 
@@ -128,19 +148,41 @@ export function YardMonitor({ terminal }: { terminal: Terminal }) {
       </div>
 
       <div className="w-[300px] shrink-0 flex flex-col gap-2">
-        <div className="bg-[var(--bg-panel)] border border-[var(--border-light)] rounded-md p-3">
-          <div className="text-[10px] font-mono uppercase tracking-widest text-[var(--text-tertiary)] mb-2">Summary</div>
+        <div className="bg-[var(--bg-panel)] border border-[var(--border-light)] rounded-sm p-3">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-[10px] font-mono uppercase tracking-widest text-[var(--text-tertiary)]">Summary</div>
+            <button
+              onClick={() => setMuted((m) => !m)}
+              className="flex items-center gap-1 text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-sm border transition-colors"
+              style={{
+                color: muted ? "var(--text-tertiary)" : "var(--signal)",
+                borderColor: muted ? "var(--border)" : "var(--signal)",
+              }}
+              title={muted ? "Critical alert sound is off" : "Critical alert sound is on"}
+            >
+              {muted ? (
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2 2m0-4l-2 2M9 9v6h4l5 5V4l-5 5H9z" />
+                </svg>
+              ) : (
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M9 9v6h4l5 5V4l-5 5H9z" />
+                </svg>
+              )}
+              {muted ? "Muted" : "Alerts On"}
+            </button>
+          </div>
           <div className="grid grid-cols-2 gap-2 text-center">
             <Stat label="Total Violations" value={summary.totalViolations} color="var(--accent-discharge)" />
-            <Stat label="Critical" value={summary.criticalCount} color="#dc2626" />
-            <Stat label="High" value={summary.highCount} color="#f97316" />
-            <Stat label="Medium" value={summary.mediumCount} color="#f59e0b" />
-            <Stat label="Reefer" value={summary.reeferCount} color="#f97316" />
-            <Stat label="DG" value={summary.dgCount} color="#ef4444" />
+            <Stat label="Critical" value={summary.criticalCount} color="var(--distress)" />
+            <Stat label="High" value={summary.highCount} color={SEVERITY_COLORS.HIGH} />
+            <Stat label="Medium" value={summary.mediumCount} color="var(--beacon)" />
+            <Stat label="Reefer" value={summary.reeferCount} color={BLOCK_COLORS.RF} />
+            <Stat label="DG" value={summary.dgCount} color={BLOCK_COLORS.DG} />
           </div>
         </div>
 
-        <div className="flex-1 min-h-0 bg-[var(--bg-panel)] border border-[var(--border-light)] rounded-md overflow-hidden flex flex-col">
+        <div className="flex-1 min-h-0 bg-[var(--bg-panel)] border border-[var(--border-light)] rounded-sm overflow-hidden flex flex-col">
           <div className="px-3 py-2 text-[10px] font-mono uppercase tracking-widest text-[var(--text-tertiary)] border-b border-[var(--border-light)]">
             Violations ({data.violations.length})
           </div>

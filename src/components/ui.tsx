@@ -1,4 +1,5 @@
 "use client";
+import { fillColor } from "@/lib/ui";
 
 export function ProgressBar({
   done,
@@ -20,6 +21,54 @@ export function ProgressBar({
   );
 }
 
+export function LiveStatus({
+  lastUpdated,
+  now,
+  error,
+  intervalMs,
+}: {
+  lastUpdated: Date | null;
+  now: number;
+  error: string | null;
+  intervalMs: number;
+}) {
+  if (!lastUpdated) {
+    return (
+      <span className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider" style={{ color: "var(--text-tertiary)" }}>
+        <span className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--text-tertiary)" }} />
+        Connecting…
+      </span>
+    );
+  }
+
+  const ageMs = now - lastUpdated.getTime();
+  const staleAfter = Math.max(intervalMs * 2.5, intervalMs + 15000);
+  const isStale = ageMs > staleAfter;
+  const isDown = Boolean(error) && isStale;
+  const ageSec = Math.max(0, Math.round(ageMs / 1000));
+
+  const label = isDown
+    ? "Connection lost"
+    : isStale
+      ? "Data may be stale"
+      : "Live";
+  const color = isDown ? "var(--distress)" : isStale ? "var(--beacon)" : "var(--safe)";
+  const ageText = ageSec < 60 ? `${ageSec}s ago` : `${Math.round(ageSec / 60)}m ago`;
+
+  return (
+    <span
+      className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider"
+      style={{ color }}
+      title={lastUpdated.toLocaleTimeString()}
+    >
+      <span
+        className={`w-1.5 h-1.5 rounded-full ${isDown || isStale ? "" : "animate-pulse-dot"}`}
+        style={{ background: color }}
+      />
+      {label} · {ageText}
+    </span>
+  );
+}
 export function Ring({
   ratio,
   size = 44,
@@ -36,7 +85,7 @@ export function Ring({
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const pct = Math.max(0, Math.min(1, ratio));
-  const col = color ?? (pct >= 0.9 ? "#dc2626" : pct >= 0.75 ? "#f97316" : pct >= 0.6 ? "#f59e0b" : "#059669");
+  const col = color ?? fillColor(pct);
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="shrink-0 -rotate-90">
       <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={bg} strokeWidth={stroke} />

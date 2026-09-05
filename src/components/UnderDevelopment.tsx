@@ -11,9 +11,6 @@ const UNDER_DEVELOPMENT: Record<ScreenKey, boolean> = {
   DCT_YARD_MONITOR: false,
   ACT_YT_TRACKER: false,
   DCT_YT_TRACKER: false,
-  GATE_MONITOR: false,
-  YARD_MONITOR: false,
-  BERTH_MONITOR: false,
 };
 
 export function UnderDevelopment({ name }: { name: string }) {

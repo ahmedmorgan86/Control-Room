@@ -8,10 +8,7 @@ export type ScreenKey =
   | "ACT_YARD_MONITOR"
   | "DCT_YARD_MONITOR"
   | "ACT_YT_TRACKER"
-  | "DCT_YT_TRACKER"
-  | "GATE_MONITOR"
-  | "YARD_MONITOR"
-  | "BERTH_MONITOR";
+  | "DCT_YT_TRACKER";
 
 export type MonitorKind = "VSL" | "EQU" | "YARD" | "OTHER";
 

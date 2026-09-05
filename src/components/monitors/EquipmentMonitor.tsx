@@ -1,14 +1,16 @@
 "use client";
 
 import { useMemo } from "react";
+import { EquipmentIcon } from "@/components/EquipmentIcon";
 import type { EquCard, EquipmentData, Terminal } from "@/lib/types";
 import { usePolling } from "@/lib/usePolling";
+import { LiveStatus } from "@/components/ui";
 import { EQU_ACCENTS, formatCount, tttColor, tttLabel } from "@/lib/ui";
 
 function EquStatusDot({ online }: { online: boolean }) {
   return (
     <span
-      className={`inline-block w-2 h-2 rounded-full ${online ? "bg-emerald-500" : "bg-slate-400"} animate-pulse-dot`}
+      className={`inline-block w-2 h-2 rounded-full ${online ? "bg-[var(--safe)]" : "bg-[var(--text-tertiary)]"} animate-pulse-dot`}
       style={online ? {} : { animation: "none" }}
     />
   );
@@ -16,23 +18,26 @@ function EquStatusDot({ online }: { online: boolean }) {
 
 function YTOnlineIcon({ online }: { online: boolean }) {
   return online ? (
-    <svg className="w-3.5 h-3.5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg className="w-3.5 h-3.5 text-[var(--safe)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
     </svg>
   ) : (
-    <svg className="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg className="w-3.5 h-3.5 text-[var(--text-tertiary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
     </svg>
   );
 }
 
 function YTCard({ card, pending }: { card: EquCard; pending?: number }) {
-  const accent = EQU_ACCENTS[card.equType] ?? "#94a3b8";
+  const accent = EQU_ACCENTS[card.equType] ?? "var(--text-tertiary)";
   const ttt = tttColor(card.tttMinutes);
   return (
     <div className="bg-[var(--bg-panel)] border border-[var(--border-light)] rounded p-2 flex flex-col gap-1 min-w-[120px]">
       <div className="flex items-center justify-between">
-        <span className="font-mono font-bold text-[10px] text-[var(--text-primary)]">{card.displayName}</span>
+        <span className="flex items-center gap-1.5 min-w-0">
+          <EquipmentIcon equType={card.equType} className="w-7 h-7 shrink-0" style={{ color: accent }} />
+          <span className="font-mono font-bold text-[10px] text-[var(--text-primary)] truncate">{card.displayName}</span>
+        </span>
         <YTOnlineIcon online={card.isOnline} />
       </div>
       <div className="text-[9px] font-mono text-[var(--text-secondary)] truncate">{card.driverName ?? "—"}</div>
@@ -52,7 +57,7 @@ function YTCard({ card, pending }: { card: EquCard; pending?: number }) {
           </span>
         )}
         {pending != null && (
-          <span className="text-[9px] font-mono font-bold text-blue-500 tabular-nums">P{pending}</span>
+          <span className="text-[9px] font-mono font-bold text-[var(--signal)] tabular-nums">P{pending}</span>
         )}
       </div>
     </div>
@@ -61,11 +66,12 @@ function YTCard({ card, pending }: { card: EquCard; pending?: number }) {
 
 function QCGroupCard({ group, compact }: { group: EquipmentData["qcGroups"][number]; compact: boolean }) {
   const qc = group.qcCard;
-  const accent = compact ? (group.qcNo === "QC09" || group.qcNo === "QC82" ? "#10b981" : "#2563eb") : "#2563eb";
+  const accent = compact ? (group.qcNo === "QC09" || group.qcNo === "QC82" ? "var(--safe)" : "var(--signal)") : "var(--signal)";
   return (
-    <div className="bg-[var(--bg-operational)] border border-[var(--border-light)] rounded-md p-2 flex flex-col gap-1.5">
+    <div className="bg-[var(--bg-operational)] border border-[var(--border-light)] rounded-sm p-2 flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
+          <EquipmentIcon equType="QC" className="w-8 h-8 shrink-0" style={{ color: accent }} />
           <EquStatusDot online={qc.isOnline} />
           <span className="font-mono font-black text-sm text-[var(--text-primary)]">{group.qcNo}</span>
         </div>
@@ -103,7 +109,7 @@ function EquCardGrid({ cards }: { cards: EquCard[] }) {
 }
 
 export function EquipmentMonitor({ terminal }: { terminal: Terminal }) {
-  const { data, loading, error, lastUpdated } = usePolling<EquipmentData>(`/api/equipment?terminal=${terminal}`, 30000);
+  const { data, loading, error, lastUpdated, now } = usePolling<EquipmentData>(`/api/equipment?terminal=${terminal}`, 30000);
 
   if (loading && !data) {
     return (
@@ -127,13 +133,13 @@ export function EquipmentMonitor({ terminal }: { terminal: Terminal }) {
     <div className="flex-1 min-h-0 flex flex-col p-3 gap-2">
       <div className="flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-[var(--text-tertiary)]">
-          <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse-dot" />
+          <span className="inline-block w-2 h-2 rounded-full bg-[var(--safe)] animate-pulse-dot" />
           Equipment Overview
         </div>
         <div className="flex items-center gap-3">
           <span className="text-[10px] font-mono text-[var(--text-secondary)]">Active {data.totalActive}</span>
           <span className="text-[10px] font-mono text-[var(--text-secondary)]">Online {data.totalOnline}</span>
-          {lastUpdated && <span className="text-[10px] font-mono text-[var(--text-tertiary)]">{lastUpdated.toLocaleTimeString()}</span>}
+          <LiveStatus lastUpdated={lastUpdated} now={now} error={error} intervalMs={30000} />
         </div>
       </div>
 
@@ -161,7 +167,11 @@ export function EquipmentMonitor({ terminal }: { terminal: Terminal }) {
               {data.yardSections.map((section) => (
                 <div key={section.label} className="mb-2">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: section.accentColor ?? EQU_ACCENTS[section.equType] ?? "#94a3b8" }} />
+                    <EquipmentIcon
+                      equType={section.equType}
+                      className="w-5 h-5 shrink-0"
+                      style={{ color: section.accentColor ?? EQU_ACCENTS[section.equType] ?? "var(--text-tertiary)" }}
+                    />
                     <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--text-secondary)]">
                       {section.label}
                     </span>
@@ -175,15 +185,15 @@ export function EquipmentMonitor({ terminal }: { terminal: Terminal }) {
         </div>
 
         <div className="w-[280px] shrink-0 flex flex-col gap-2">
-          <div className="bg-[var(--bg-panel)] border border-[var(--border-light)] rounded-md p-3">
+          <div className="bg-[var(--bg-panel)] border border-[var(--border-light)] rounded-sm p-3">
             <div className="text-[10px] font-mono uppercase tracking-widest text-[var(--text-tertiary)] mb-2">Status</div>
             <div className="grid grid-cols-2 gap-2">
               <Stat label="Total Active" value={formatCount(data.totalActive)} color="var(--accent-blue)" />
-              <Stat label="Online" value={formatCount(data.totalOnline)} color="#059669" />
-              <Stat label="QC Groups" value={formatCount(data.qcGroups.length)} color="#2563eb" />
+              <Stat label="Online" value={formatCount(data.totalOnline)} color="var(--safe)" />
+              <Stat label="QC Groups" value={formatCount(data.qcGroups.length)} color="var(--signal)" />
             </div>
           </div>
-          <div className="flex-1 min-h-0 bg-[var(--bg-panel)] border border-[var(--border-light)] rounded-md overflow-hidden flex flex-col">
+          <div className="flex-1 min-h-0 bg-[var(--bg-panel)] border border-[var(--border-light)] rounded-sm overflow-hidden flex flex-col">
             <div className="px-3 py-2 text-[10px] font-mono uppercase tracking-widest text-[var(--text-tertiary)] border-b border-[var(--border-light)]">
               Priority Alerts
             </div>

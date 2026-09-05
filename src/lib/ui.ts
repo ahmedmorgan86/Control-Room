@@ -14,23 +14,23 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
 };
 
 export const BLOCK_COLORS: Record<BlockType, string> = {
-  DG: "#ef4444",
-  RF: "#f97316",
-  EMPTY: "#64748b",
-  IMP_EXP: "#a855f7",
-  IMP: "#059669",
-  EXP: "#2563eb",
-  CFS: "#0ea5e9",
-  INSP: "#14b8a6",
-  NEGLECT: "#dc2626",
-  OTHER: "#94a3b8",
+  DG: "#b23a2e",
+  RF: "#3d6e8c",
+  EMPTY: "#8a8578",
+  IMP_EXP: "#6d5b8a",
+  IMP: "#3f7d52",
+  EXP: "#a8471d",
+  CFS: "#4f6474",
+  INSP: "#9c6b12",
+  NEGLECT: "#8a3226",
+  OTHER: "#a39e92",
 };
 
 export const SEVERITY_COLORS: Record<Severity, string> = {
-  CRITICAL: "#dc2626",
-  HIGH: "#f97316",
-  MEDIUM: "#f59e0b",
-  LOW: "#84cc16",
+  CRITICAL: "#b23a2e",
+  HIGH: "#a8471d",
+  MEDIUM: "#9c6b12",
+  LOW: "#8a7a3a",
 };
 
 export const EQU_LABELS: Record<EquType, string> = {
@@ -44,13 +44,13 @@ export const EQU_LABELS: Record<EquType, string> = {
 };
 
 export const EQU_ACCENTS: Record<EquType, string> = {
-  QC: "#2563eb",
-  YT: "#10b981",
-  RTG: "#f97316",
-  RS: "#0ea5e9",
-  TL: "#8b5cf6",
-  SUPPORT: "#64748b",
-  UNK: "#94a3b8",
+  QC: "#a8471d",
+  YT: "#3f7d52",
+  RTG: "#9c6b12",
+  RS: "#4f6474",
+  TL: "#6d5b8a",
+  SUPPORT: "#8a8578",
+  UNK: "#a39e92",
 };
 
 export function formatCount(v: number | undefined | null): string {
@@ -72,18 +72,18 @@ export function formatArrival(iso: string | null | undefined): string {
 }
 
 export function fillColor(ratio: number): string {
-  if (ratio >= 0.9) return "#dc2626";
-  if (ratio >= 0.75) return "#f97316";
-  if (ratio >= 0.6) return "#f59e0b";
-  return "#059669";
+  if (ratio >= 0.9) return "#b23a2e";
+  if (ratio >= 0.75) return "#a8471d";
+  if (ratio >= 0.6) return "#9c6b12";
+  return "#3f7d52";
 }
 
 export function tttColor(min: number | null | undefined): string {
-  if (min == null) return "#94a3b8";
-  if (min >= 30) return "#dc2626";
-  if (min >= 20) return "#f97316";
-  if (min >= 10) return "#f59e0b";
-  return "#059669";
+  if (min == null) return "#a39e92";
+  if (min >= 30) return "#b23a2e";
+  if (min >= 20) return "#a8471d";
+  if (min >= 10) return "#9c6b12";
+  return "#3f7d52";
 }
 
 export function tttLabel(min: number | null | undefined): string {

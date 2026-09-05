@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Vessel, Terminal } from "@/lib/types";
 import { usePolling } from "@/lib/usePolling";
-import { ProgressBar } from "@/components/ui";
+import { ProgressBar, LiveStatus } from "@/components/ui";
 import { formatArrival, formatCount } from "@/lib/ui";
+import { ScreenIcon } from "@/components/ScreenIcon";
 
 function compareCranes(a: { layoutRank: number; craneId: string }, b: { layoutRank: number; craneId: string }) {
   return a.layoutRank - b.layoutRank || a.craneId.localeCompare(b.craneId);
@@ -77,15 +78,15 @@ function VesselVisualization({
               <g key={crane.craneId} transform={`translate(${x},0)`}>
                 {conflict && (
                   <g>
-                    <rect className="qc-conflict-ring" x="-16" y="60" width="32" height="70" fill="none" stroke="#ef4444" rx="4" />
-                    <rect className="qc-conflict-box" x="-12" y="64" width="24" height="62" fill="rgba(239,68,68,0.12)" stroke="#ef4444" strokeWidth="1.5" rx="3" />
+                    <rect className="qc-conflict-ring" x="-16" y="60" width="32" height="70" fill="none" stroke="var(--distress)" rx="4" />
+                    <rect className="qc-conflict-box" x="-12" y="64" width="24" height="62" fill="rgba(178,58,46,0.12)" stroke="var(--distress)" strokeWidth="1.5" rx="3" />
                   </g>
                 )}
                 <text x="0" y="20" textAnchor="middle" fontSize="14" fontFamily="monospace" fill="var(--text-secondary)">
                   {crane.craneId}
                 </text>
                 <g className="qc-trolley">
-                  <rect x="-30" y="28" width="60" height="12" fill="#64748b" rx="2" />
+                  <rect x="-30" y="28" width="60" height="12" fill="var(--text-tertiary)" rx="2" />
                   <rect x="-10" y="38" width="20" height="26" fill="#475569" rx="2" />
                   <rect x="-16" y="66" width="32" height="4" fill="#334155" />
                 </g>
@@ -102,7 +103,7 @@ function VesselVisualization({
             <path d="M120,320 L180,300 L1080,300 L1150,320 Z" fill="#334155" />
             <path d="M140,320 L160,372 L650,372 L650,320 Z" fill="#334155" />
             {[...Array(6)].map((_, i) => (
-              <rect key={i} x={240 + i * 140} y="200" width="70" height="80" rx="4" fill="#e2e8f0" stroke="#94a3b8" strokeWidth="2" />
+              <rect key={i} x={240 + i * 140} y="200" width="70" height="80" rx="4" fill="var(--bg-header)" stroke="var(--border)" strokeWidth="2" />
             ))}
             <text x="600" y="180" textAnchor="middle" fontSize="18" fontFamily="monospace" fill="var(--text-primary)" fontWeight={700}>
               {vesselName}
@@ -168,7 +169,7 @@ function VesselCard({ vessel }: { vessel: Vessel }) {
   const sortedCranes = useMemo(() => [...vessel.cranes].sort(compareCranes), [vessel.cranes]);
 
   return (
-    <div className="flex flex-col h-full bg-[var(--bg-panel)] border border-[var(--border-light)] rounded-md overflow-hidden shadow-sm">
+    <div className="flex flex-col h-full bg-[var(--bg-panel)] border border-[var(--border-light)] rounded-sm overflow-hidden shadow-sm">
       <div className="bg-[var(--bg-vessel-header)] border-b border-[var(--border-crane-row)] px-4 py-2">
         <div className="flex items-start justify-between">
           <div>
@@ -191,7 +192,7 @@ function VesselCard({ vessel }: { vessel: Vessel }) {
         <div className="grid grid-cols-3 gap-2 mt-2">
           <Bar label="LOAD" done={vessel.loadingDone} total={vessel.loadingTotal} color="var(--accent-loading)" />
           <Bar label="DISCH" done={vessel.dischargingDone} total={vessel.dischargingTotal} color="var(--accent-discharge)" />
-          <Bar label="TOTAL" done={vessel.totalDone} total={vessel.totalMoves} color="#2563eb" />
+          <Bar label="TOTAL" done={vessel.totalDone} total={vessel.totalMoves} color="var(--signal)" />
         </div>
       </div>
 
@@ -257,7 +258,7 @@ function Bar({ label, done, total, color }: { label: string; done: number; total
 }
 
 export function VesselMonitor({ terminal }: { terminal: Terminal }) {
-  const { data, loading, error, lastUpdated } = usePolling<Vessel[]>(`/api/vessels?terminal=${terminal}`, 60000);
+  const { data, loading, error, lastUpdated, now } = usePolling<Vessel[]>(`/api/vessels?terminal=${terminal}`, 60000);
 
   if (loading && !data) {
     return (
@@ -285,14 +286,11 @@ export function VesselMonitor({ terminal }: { terminal: Terminal }) {
     <div className="flex-1 min-h-0 p-3 flex flex-col gap-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-[var(--text-tertiary)]">
-          <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse-dot" />
+          <ScreenIcon kind="VESSEL" className="w-6 h-6" style={{ color: "var(--signal)" }} />
+          <span className="inline-block w-2 h-2 rounded-full bg-[var(--safe)] animate-pulse-dot" />
           Live · {formatCount(data.length)} vessels
         </div>
-        {lastUpdated && (
-          <div className="text-[10px] font-mono text-[var(--text-tertiary)]">
-            Updated {lastUpdated.toLocaleTimeString()}
-          </div>
-        )}
+        {lastUpdated && <LiveStatus lastUpdated={lastUpdated} now={now} error={error} intervalMs={60000} />}
       </div>
       <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-3 overflow-auto custom-scrollbar">
         {data.map((v) => (
