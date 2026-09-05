@@ -24,7 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* eslint-disable-next-line @next/next/no-page-custom-font -- this rule targets the Pages Router; loading fonts in the App Router root layout's <head> is the standard pattern. */}
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
         />
         {/* eslint-disable-next-line @next/next/no-css-tags -- tv-compat.css must be a raw public asset so old smart TV browsers get the @layer fallback; importing it as a CSS module would re-wrap it in a layer. */}
         <link rel="stylesheet" href="/tv-compat.css" />

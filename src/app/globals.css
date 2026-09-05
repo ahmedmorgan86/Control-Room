@@ -1,105 +1,70 @@
 @import "tailwindcss";
 
-/*
- * Design system: "Dockside" — a restrained, editorial instrument-panel
- * look for a live container-terminal control room. Deliberately avoids
- * the neon-glow/dark-grid/scanline tropes common in AI-generated dark
- * dashboards: warm paper-toned neutrals, a single confident industrial
- * accent (the burnt-orange of quay-crane paint and hi-vis site gear),
- * hairline borders instead of shadows, no gradients, no glow.
- */
-
 :root {
-  --font-sans: "Archivo", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Code", monospace;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", monospace;
 
-  --bg-page: #faf9f6;
-  --bg-panel: #ffffff;
-  --bg-header: #f3f1ec;
-  --bg-topbar: #ffffff;
-  --bg-input: #ffffff;
-  --bg-progress: #ede9e1;
-  --bg-nav-hover: rgba(168, 71, 29, 0.06);
-
-  --border: #e1ddd3;
-  --border-light: #ebe7de;
-  --border-topbar: #e1ddd3;
-
-  --text-primary: #1a1917;
-  --text-secondary: #6b675f;
-  --text-tertiary: #a39e92;
-
-  /* One confident accent (burnt terracotta — quay-crane orange), plus
-     muted, deliberately non-neon severity colors. */
-  --accent-blue: #a8471d;
-  --accent-discharge: #b23a2e;
-  --accent-loading: #3f7d52;
-  --accent-crane: #9c6b12;
-
-  --signal: var(--accent-blue);
-  --beacon: var(--accent-crane);
-  --safe: var(--accent-loading);
-  --distress: var(--accent-discharge);
-
-  --bg-vessel-viz: #f3f1ec;
-  --bg-vessel-header: #ede9e1;
-  --bg-operational: #f3f1ec;
-  --bg-crane-table: #faf9f6;
-  --border-crane-row: #ebe7de;
-
-  --wave-1: #c7d2d9;
-  --wave-2: #aebec7;
-  --wave-3: #94a9b5;
-  --wave-4: #7b93a2;
-  --wave-5: #64798c;
-  --wave-6: #4f6474;
-  --wave-7: #3b4f5c;
-  --wave-8: #293a44;
-
-  --radius-panel: 3px;
+  --bg-page: #f0f2f5;
+  --bg-panel: #fff;
+  --bg-header: #f7f8fa;
+  --border: #d0d5dd;
+  --border-light: #e4e7ec;
+  --text-primary: #1d2939;
+  --text-secondary: #667085;
+  --text-tertiary: #98a2b3;
+  --accent-blue: #2563eb;
+  --accent-discharge: #dc2626;
+  --accent-loading: #059669;
+  --accent-crane: #ea580c;
+  --bg-progress: #e2e8f0;
+  --bg-gmph: var(--bg-page);
+  --bg-vessel-header: var(--bg-header);
+  --bg-crane-table: var(--bg-panel);
+  --bg-operational: var(--bg-panel);
+  --bg-vessel-viz: var(--bg-panel);
+  --border-crane-row: var(--border-light);
+  --bg-topbar: #e8ebf0;
+  --border-topbar: #d0d5dd;
+  --bg-input: #fff;
+  --bg-nav-hover: #0000000d;
+  --wave-1: #80deec;
+  --wave-2: #95e5f0;
+  --wave-3: #aaebf4;
+  --wave-4: #bef1f7;
+  --wave-5: #d2f6fb;
+  --wave-6: #e4f9fd;
+  --wave-7: #f1fcfd;
+  --wave-8: #faffff;
 }
 
 body.dark {
-  --bg-page: #171613;
-  --bg-panel: #201f1b;
-  --bg-header: #262520;
-  --bg-topbar: #171613;
-  --bg-input: #201f1b;
-  --bg-progress: #322f27;
-  --bg-nav-hover: rgba(217, 122, 68, 0.08);
-
-  --border: #38352c;
-  --border-light: #29281f;
-  --border-topbar: #38352c;
-
-  --text-primary: #f2f0ea;
-  --text-secondary: #aba79c;
-  --text-tertiary: #6e6a5f;
-
-  --accent-blue: #d97a44;
-  --accent-discharge: #e2685c;
-  --accent-loading: #5fa679;
-  --accent-crane: #c99a3b;
-
-  --signal: var(--accent-blue);
-  --beacon: var(--accent-crane);
-  --safe: var(--accent-loading);
-  --distress: var(--accent-discharge);
-
-  --bg-vessel-viz: #1c1b17;
-  --bg-vessel-header: #201f1a;
-  --bg-operational: #201f1a;
-  --bg-crane-table: #171613;
-  --border-crane-row: #29281f;
-
-  --wave-1: #3a4a54;
-  --wave-2: #324049;
-  --wave-3: #2a353d;
-  --wave-4: #232b32;
-  --wave-5: #1c2227;
-  --wave-6: #161b1f;
-  --wave-7: #101317;
-  --wave-8: #0b0d0f;
+  --bg-page: #131b28;
+  --bg-panel: #2a324a;
+  --bg-header: #333c4d;
+  --border: #1f467e;
+  --border-light: #213552;
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-tertiary: #94a3b8;
+  --bg-progress: #1f467e;
+  --bg-gmph: #1b2a45;
+  --bg-vessel-header: #172030;
+  --bg-crane-table: #172030;
+  --bg-operational: #1d293d;
+  --bg-vessel-viz: #182233;
+  --border-crane-row: #333c4d;
+  --bg-topbar: #0e1520;
+  --border-topbar: #1f467e;
+  --bg-input: #172030;
+  --bg-nav-hover: #ffffff0f;
+  --wave-1: #1f467e;
+  --wave-2: #1e4071;
+  --wave-3: #1d3a64;
+  --wave-4: #1b3457;
+  --wave-5: #1a2e4a;
+  --wave-6: #19283d;
+  --wave-7: #182430;
+  --wave-8: #172030;
 }
 
 html,
@@ -114,7 +79,6 @@ body {
   margin: 0;
   padding: 0;
   overflow: hidden;
-  transition: background-color 0.2s ease;
 }
 
 .font-mono {
@@ -129,8 +93,6 @@ body {
   animation: pulse-dot 1.8s ease-in-out infinite;
 }
 
-/* Attention state for critical items — a solid color/opacity pulse,
-   deliberately not a blurred glow ring. */
 @keyframes critical-pulse {
   0%, 100% { border-color: var(--distress); background-color: color-mix(in srgb, var(--distress) 6%, var(--bg-panel)); }
   50% { border-color: color-mix(in srgb, var(--distress) 55%, var(--border)); background-color: var(--bg-panel); }
@@ -147,11 +109,11 @@ body {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--signal);
+  background: var(--accent-blue);
   opacity: 0.35;
   border-radius: 10px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--signal);
+  background: var(--accent-blue);
   opacity: 0.55;
 }

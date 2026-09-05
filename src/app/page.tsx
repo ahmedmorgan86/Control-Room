@@ -11,8 +11,6 @@ import { UnderDevelopment, isUnderDevelopment } from "@/components/UnderDevelopm
 import { SCREEN_LABELS, screenTerminal, getUserScreens } from "@/lib/screens";
 import type { ScreenKey, Terminal } from "@/lib/types";
 
-const KIOSK_INTERVAL_MS = 25000;
-
 function LoadingScreen() {
   return (
     <div className="w-screen h-screen flex flex-col items-center justify-center bg-[var(--bg-page)]">
@@ -43,10 +41,6 @@ function Dashboard() {
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() =>
     typeof window !== "undefined" && window.localStorage.getItem("dark") === "1",
   );
-  const [kioskMode, setKioskMode] = useState<boolean>(() =>
-    typeof window !== "undefined" && window.localStorage.getItem("kiosk") === "1",
-  );
-  const [kioskSecondsLeft, setKioskSecondsLeft] = useState(KIOSK_INTERVAL_MS / 1000);
 
   // apply dark class on mount / whenever state changes
   useEffect(() => {
@@ -58,14 +52,6 @@ function Dashboard() {
       const next = !prev;
       document.body.classList.toggle("dark", next);
       window.localStorage.setItem("dark", next ? "1" : "0");
-      return next;
-    });
-  };
-
-  const toggleKiosk = () => {
-    setKioskMode((prev) => {
-      const next = !prev;
-      window.localStorage.setItem("kiosk", next ? "1" : "0");
       return next;
     });
   };
@@ -82,32 +68,6 @@ function Dashboard() {
     return () => window.removeEventListener("toggle-dark-mode", handler);
   }, []);
 
-  // Auto-rotate through the user's available screens. Any manual
-  // navigation (via Topbar) still just updates `screen` directly, and
-  // this effect re-arms a fresh full dwell time from wherever the user
-  // lands next — it never fights a manual click.
-  useEffect(() => {
-    if (!kioskMode || myScreens.length < 2) return;
-    // Resetting the countdown here (rather than deriving it from render)
-    // is intentional: it must reset exactly when this effect re-arms
-    // (kiosk toggled on, or the current screen changed), not on every render.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setKioskSecondsLeft(KIOSK_INTERVAL_MS / 1000);
-    const tick = setInterval(() => {
-      setKioskSecondsLeft((s) => (s > 1 ? s - 1 : KIOSK_INTERVAL_MS / 1000));
-    }, 1000);
-    const advance = setInterval(() => {
-      setScreen((prev) => {
-        const idx = prev ? myScreens.indexOf(prev) : -1;
-        return myScreens[(idx + 1) % myScreens.length];
-      });
-    }, KIOSK_INTERVAL_MS);
-    return () => {
-      clearInterval(tick);
-      clearInterval(advance);
-    };
-  }, [kioskMode, myScreens, screen]);
-
   return (
     <div className="w-screen h-screen flex flex-col bg-[var(--bg-page)] overflow-hidden">
       <Topbar
@@ -115,9 +75,6 @@ function Dashboard() {
         onNavigate={setScreen}
         isDarkMode={isDarkMode}
         onToggleDarkMode={toggleDark}
-        kioskMode={kioskMode}
-        onToggleKioskMode={toggleKiosk}
-        kioskSecondsLeft={kioskSecondsLeft}
       />
       <div className="flex-1 min-h-0 flex">
         {user && screen ? (

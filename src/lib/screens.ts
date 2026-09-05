@@ -9,6 +9,9 @@ export const SCREEN_LABELS: Record<ScreenKey, string> = {
   DCT_YARD_MONITOR: "DCT Yard Monitor",
   ACT_YT_TRACKER: "ACT YT Tracker",
   DCT_YT_TRACKER: "DCT YT Tracker",
+  GATE_MONITOR: "Gate Monitor",
+  YARD_MONITOR: "Yard Monitor",
+  BERTH_MONITOR: "Berth Monitor",
 };
 
 export function screenKind(key: ScreenKey): MonitorKind {
