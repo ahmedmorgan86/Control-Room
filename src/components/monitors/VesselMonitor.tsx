@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { Vessel, Terminal } from "@/lib/types";
+import type { Vessel } from "@/lib/types";
 import { usePolling } from "@/lib/usePolling";
-import { ProgressBar, LiveStatus } from "@/components/ui";
-import { formatArrival, formatCount } from "@/lib/ui";
-import { ScreenIcon } from "@/components/ScreenIcon";
+import { ProgressBar } from "@/components/ui";
+import { formatArrival } from "@/lib/ui";
+import { MonitorHeader } from "@/components/MonitorHeader";
 
 function compareCranes(a: { layoutRank: number; craneId: string }, b: { layoutRank: number; craneId: string }) {
   return a.layoutRank - b.layoutRank || a.craneId.localeCompare(b.craneId);
@@ -257,48 +257,74 @@ function Bar({ label, done, total, color }: { label: string; done: number; total
   );
 }
 
-export function VesselMonitor({ terminal }: { terminal: Terminal }) {
-  const { data, loading, error, lastUpdated, now } = usePolling<Vessel[]>(`/api/vessels?terminal=${terminal}`, 60000);
+export function VesselMonitor({ terminalCode }: { terminalCode: string }) {
+  const { data, loading, error, lastUpdated } = usePolling<Vessel[]>(`/api/vessels?terminal=${terminalCode}`, 60000);
+
+  const vesselCount = data?.length ?? 0;
 
   if (loading && !data) {
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-[var(--border)] border-t-[var(--accent-blue)] rounded-full animate-spin" />
-      </div>
+      <>
+        <MonitorHeader title={`${terminalCode} Vessel Monitoring`} />
+        <div className="flex-1 flex flex-col items-center justify-center text-[var(--text-tertiary)]">
+          <div className="w-8 h-8 border-2 border-[var(--border)] border-t-[var(--accent-blue)] rounded-full animate-spin mb-3" />
+          <p className="text-xs font-mono uppercase tracking-widest">Connecting to Terminal Database</p>
+        </div>
+      </>
     );
   }
   if (error && !data) {
     return (
-      <div className="flex-1 flex items-center justify-center text-xs font-mono text-[var(--accent-discharge)]">
-        Failed to load vessels: {error}
-      </div>
-    );
-  }
-  if (!data || data.length === 0) {
-    return (
-      <div className="flex-1 flex items-center justify-center text-xs font-mono text-[var(--text-tertiary)]">
-        No vessels
-      </div>
+      <>
+        <MonitorHeader title={`${terminalCode} Vessel Monitoring`} />
+        <div className="flex-1 flex flex-col items-center justify-center h-full">
+          <div className="border border-[var(--accent-discharge)] bg-red-50 px-8 py-6 text-center max-w-md">
+            <div className="text-xs font-bold font-mono text-[var(--accent-discharge)] uppercase tracking-widest mb-2">Connection Fault</div>
+            <p className="text-[11px] font-mono text-[var(--text-secondary)] mb-4">{error}</p>
+            <button className="px-4 py-1.5 text-[11px] font-mono font-bold uppercase tracking-wider text-white bg-[var(--accent-discharge)] hover:opacity-90 transition-opacity">
+              Retry
+            </button>
+          </div>
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="flex-1 min-h-0 p-3 flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-[var(--text-tertiary)]">
-          <ScreenIcon kind="VESSEL" className="w-6 h-6" style={{ color: "var(--signal)" }} />
-          <span className="inline-block w-2 h-2 rounded-full bg-[var(--safe)] animate-pulse-dot" />
-          Live · {formatCount(data.length)} vessels
-        </div>
-        {lastUpdated && <LiveStatus lastUpdated={lastUpdated} now={now} error={error} intervalMs={60000} />}
-      </div>
-      <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-3 overflow-auto custom-scrollbar">
-        {data.map((v) => (
-          <div key={v.vesselCode} className="min-h-[400px] h-full">
-            <VesselCard vessel={v} />
+    <>
+      <MonitorHeader
+        title={`${terminalCode} Vessel Monitoring`}
+        stats={
+          <span className="text-sm font-mono font-semibold text-[var(--text-secondary)]">
+            {vesselCount} {vesselCount === 1 ? "Vessel" : "Vessels"}
+          </span>
+        }
+        lastUpdated={lastUpdated}
+      />
+      <main className="flex-1 min-h-0 p-1.5">
+        {!data || data.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-[var(--text-tertiary)]">
+            <div className="border border-[var(--border)] px-12 py-8 text-center">
+              <div className="text-xs font-bold font-mono uppercase tracking-widest mb-2">No Vessel Data</div>
+              <p className="text-[11px] font-mono text-[var(--text-tertiary)]">
+                Waiting for GC order data.<br />Display will update automatically.
+              </p>
+            </div>
           </div>
-        ))}
-      </div>
-    </div>
+        ) : (
+          <div className="flex justify-center gap-1.5 h-full">
+            {data.slice(0, 3).map((v) => (
+              <div
+                key={`${v.vesselCode}_${v.callYear}_${v.callSeq}`}
+                className="h-full flex-shrink-0"
+                style={{ width: "calc((100% - 12px) / 3)" }}
+              >
+                <VesselCard vessel={v} />
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
+    </>
   );
 }

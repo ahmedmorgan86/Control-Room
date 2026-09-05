@@ -1,5 +1,69 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(/fonts/inter-400.ttf) format("truetype");
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(/fonts/inter-500.ttf) format("truetype");
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(/fonts/inter-600.ttf) format("truetype");
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(/fonts/inter-700.ttf) format("truetype");
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url(/fonts/inter-800.ttf) format("truetype");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(/fonts/jetbrains-mono-400.ttf) format("truetype");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(/fonts/jetbrains-mono-500.ttf) format("truetype");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(/fonts/jetbrains-mono-600.ttf) format("truetype");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(/fonts/jetbrains-mono-700.ttf) format("truetype");
+}
+
 :root {
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", monospace;
@@ -16,6 +80,10 @@
   --accent-discharge: #dc2626;
   --accent-loading: #059669;
   --accent-crane: #ea580c;
+  --signal: var(--accent-blue);
+  --beacon: var(--accent-crane);
+  --safe: var(--accent-loading);
+  --distress: var(--accent-discharge);
   --bg-progress: #e2e8f0;
   --bg-gmph: var(--bg-page);
   --bg-vessel-header: var(--bg-header);
@@ -57,6 +125,10 @@ body.dark {
   --border-topbar: #1f467e;
   --bg-input: #172030;
   --bg-nav-hover: #ffffff0f;
+  --signal: var(--accent-blue);
+  --beacon: var(--accent-crane);
+  --safe: var(--accent-loading);
+  --distress: var(--accent-discharge);
   --wave-1: #1f467e;
   --wave-2: #1e4071;
   --wave-3: #1d3a64;

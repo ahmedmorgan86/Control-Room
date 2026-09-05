@@ -27,10 +27,10 @@ function ScreenContent({ screen }: { screen: ScreenKey }) {
   if (isUnderDevelopment(screen)) {
     return <UnderDevelopment name={SCREEN_LABELS[screen]} />;
   }
-  if (screen.includes("VSL")) return <VesselMonitor key={screen} terminal={terminal} />;
-  if (screen.includes("EQU")) return <EquipmentMonitor key={screen} terminal={terminal} />;
+  if (screen.includes("VSL")) return <VesselMonitor key={screen} terminalCode={terminal} />;
+  if (screen.includes("EQU")) return <EquipmentMonitor key={screen} terminalCode={terminal} />;
   if (screen.includes("YT_TRACKER")) return <YTTracker key={screen} terminal={terminal} />;
-  if (screen.includes("YARD")) return <YardMonitor key={screen} terminal={terminal} />;
+  if (screen.includes("YARD")) return <YardMonitor key={screen} terminalCode={terminal} />;
   return <UnderDevelopment key={screen} name={SCREEN_LABELS[screen]} />;
 }
 

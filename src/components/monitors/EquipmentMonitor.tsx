@@ -2,10 +2,10 @@
 
 import { useMemo } from "react";
 import { EquipmentIcon } from "@/components/EquipmentIcon";
-import type { EquCard, EquipmentData, Terminal } from "@/lib/types";
+import type { EquCard, EquipmentData } from "@/lib/types";
 import { usePolling } from "@/lib/usePolling";
-import { LiveStatus } from "@/components/ui";
-import { EQU_ACCENTS, formatCount, tttColor, tttLabel } from "@/lib/ui";
+import { EQU_ACCENTS, tttColor, tttLabel } from "@/lib/ui";
+import { MonitorHeader } from "@/components/MonitorHeader";
 
 function EquStatusDot({ online }: { online: boolean }) {
   return (
@@ -108,46 +108,55 @@ function EquCardGrid({ cards }: { cards: EquCard[] }) {
   );
 }
 
-export function EquipmentMonitor({ terminal }: { terminal: Terminal }) {
-  const { data, loading, error, lastUpdated, now } = usePolling<EquipmentData>(`/api/equipment?terminal=${terminal}`, 30000);
+export function EquipmentMonitor({ terminalCode }: { terminalCode: string }) {
+  const { data, loading, error, lastUpdated } = usePolling<EquipmentData>(`/api/equipment?terminal=${terminalCode}`, 30000);
 
   if (loading && !data) {
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-[var(--border)] border-t-[var(--accent-blue)] rounded-full animate-spin" />
-      </div>
+      <>
+        <MonitorHeader title={`${terminalCode} Equipment Monitor`} />
+        <div className="flex-1 flex flex-col items-center justify-center text-[var(--text-tertiary)]">
+          <div className="w-8 h-8 border-2 border-[var(--border)] border-t-[var(--accent-blue)] rounded-full animate-spin mb-3" />
+          <p className="text-xs font-mono uppercase tracking-widest">Connecting to Equipment Database</p>
+        </div>
+      </>
     );
   }
   if (error && !data) {
     return (
-      <div className="flex-1 flex items-center justify-center text-xs font-mono text-[var(--accent-discharge)]">
-        Failed to load equipment: {error}
-      </div>
+      <>
+        <MonitorHeader title={`${terminalCode} Equipment Monitor`} />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="border border-red-400 bg-red-50 px-8 py-6 text-center max-w-md rounded-lg">
+            <div className="text-xs font-bold font-mono text-red-500 uppercase tracking-widest mb-2">Connection Fault</div>
+            <p className="text-[11px] font-mono text-[var(--text-secondary)] mb-4">{error}</p>
+            <button className="px-4 py-1.5 text-[11px] font-mono font-bold uppercase tracking-wider text-white bg-red-500 hover:bg-red-600 rounded">
+              Retry
+            </button>
+          </div>
+        </div>
+      </>
     );
   }
   if (!data) return null;
 
-  const violations = data.blockTypeMap ?? {};
-
   return (
-    <div className="flex-1 min-h-0 flex flex-col p-3 gap-2">
-      <div className="flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-[var(--text-tertiary)]">
-          <span className="inline-block w-2 h-2 rounded-full bg-[var(--safe)] animate-pulse-dot" />
-          Equipment Overview
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-[10px] font-mono text-[var(--text-secondary)]">Active {data.totalActive}</span>
-          <span className="text-[10px] font-mono text-[var(--text-secondary)]">Online {data.totalOnline}</span>
-          <LiveStatus lastUpdated={lastUpdated} now={now} error={error} intervalMs={30000} />
-        </div>
-      </div>
-
-      <div className="flex-1 min-h-0 flex gap-3">
-        <div className="flex-1 min-h-0 flex flex-col gap-3">
-          <div className="min-h-0 flex-1 flex flex-col">
-            <div className="text-[10px] font-mono uppercase tracking-widest text-[var(--text-tertiary)] mb-1 shrink-0">
-              Vessel Operations · QCs
+    <>
+      <MonitorHeader
+        title={`${terminalCode} Equipment Monitor`}
+        stats={
+          <span className="text-sm font-mono font-semibold text-[var(--text-secondary)]">
+            {data.totalActive} Active · {data.totalOnline} Online · {data.qcGroups.length} QC Ops
+          </span>
+        }
+        lastUpdated={lastUpdated}
+      />
+      <main className="flex-1 min-h-0 overflow-hidden p-2 flex flex-col gap-2">
+        <div className="flex-1 flex flex-col gap-[clamp(4px,0.8vh,12px)] min-h-0">
+          <div className="flex flex-col gap-[clamp(4px,0.7vh,10px)] shrink-0">
+            <div className="flex items-center gap-2 px-1">
+              <span className="text-xs font-mono font-black uppercase tracking-[0.3em] text-[var(--text-secondary)]">Vessel Operations</span>
+              <div className="h-px flex-1 bg-[var(--border)] opacity-30" />
             </div>
             <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar grid gap-2 content-start" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))" }}>
               {data.qcGroups.map((g) => (
@@ -159,61 +168,30 @@ export function EquipmentMonitor({ terminal }: { terminal: Terminal }) {
             </div>
           </div>
 
-          <div className="min-h-[200px] flex-1 flex flex-col">
-            <div className="text-[10px] font-mono uppercase tracking-widest text-[var(--text-tertiary)] mb-1 shrink-0">
-              Yard Operations
-            </div>
-            <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
-              {data.yardSections.map((section) => (
-                <div key={section.label} className="mb-2">
-                  <div className="flex items-center gap-2 mb-1">
-                    <EquipmentIcon
-                      equType={section.equType}
-                      className="w-5 h-5 shrink-0"
-                      style={{ color: section.accentColor ?? EQU_ACCENTS[section.equType] ?? "var(--text-tertiary)" }}
-                    />
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--text-secondary)]">
-                      {section.label}
-                    </span>
-                    <span className="text-[10px] font-mono text-[var(--text-tertiary)]">{section.cards.length}</span>
-                  </div>
-                  <EquCardGrid cards={section.cards} />
+          <div className="flex items-center gap-2 px-1 mt-2">
+            <span className="text-xs font-mono font-black uppercase tracking-[0.3em] text-[var(--text-secondary)]">Yard Operations</span>
+            <div className="h-px flex-1 bg-[var(--border)] opacity-30" />
+          </div>
+          <div className="flex-1 min-h-0 flex flex-col">
+            {data.yardSections.map((section) => (
+              <div key={section.label} className="mb-2">
+                <div className="flex items-center gap-2 mb-1">
+                  <EquipmentIcon
+                    equType={section.equType}
+                    className="w-5 h-5 shrink-0"
+                    style={{ color: section.accentColor ?? EQU_ACCENTS[section.equType] ?? "var(--text-tertiary)" }}
+                  />
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--text-secondary)]">
+                    {section.label}
+                  </span>
+                  <span className="text-[10px] font-mono text-[var(--text-tertiary)]">{section.cards.length}</span>
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="w-[280px] shrink-0 flex flex-col gap-2">
-          <div className="bg-[var(--bg-panel)] border border-[var(--border-light)] rounded-sm p-3">
-            <div className="text-[10px] font-mono uppercase tracking-widest text-[var(--text-tertiary)] mb-2">Status</div>
-            <div className="grid grid-cols-2 gap-2">
-              <Stat label="Total Active" value={formatCount(data.totalActive)} color="var(--accent-blue)" />
-              <Stat label="Online" value={formatCount(data.totalOnline)} color="var(--safe)" />
-              <Stat label="QC Groups" value={formatCount(data.qcGroups.length)} color="var(--signal)" />
-            </div>
-          </div>
-          <div className="flex-1 min-h-0 bg-[var(--bg-panel)] border border-[var(--border-light)] rounded-sm overflow-hidden flex flex-col">
-            <div className="px-3 py-2 text-[10px] font-mono uppercase tracking-widest text-[var(--text-tertiary)] border-b border-[var(--border-light)]">
-              Priority Alerts
-            </div>
-            <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-2">
-              <div className="text-[10px] font-mono text-[var(--text-tertiary)]">
-                {Object.keys(violations).length} blocks mapped · {formatCount(data.totalOnline)} equipment online
+                <EquCardGrid cards={section.cards} />
               </div>
-            </div>
+            ))}
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function Stat({ label, value, color }: { label: string; value: string; color: string }) {
-  return (
-    <div className="bg-[var(--bg-header)] rounded p-2 text-center">
-      <div className="font-mono font-black text-lg leading-none tabular-nums" style={{ color }}>{value}</div>
-      <div className="text-[8px] font-mono uppercase tracking-wider text-[var(--text-tertiary)] mt-0.5">{label}</div>
-    </div>
+      </main>
+    </>
   );
 }
