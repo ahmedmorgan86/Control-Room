@@ -155,3 +155,34 @@ body {
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
+
+/* Scrollbar thin for panels */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: #0a0f1e;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #1c273e;
+  border-radius: 10px;
+}
+
+/* Ticker animation */
+@keyframes ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-25%); }
+}
+.animate-ticker {
+  animation: ticker 40s linear infinite;
+}
+
+/* Font families */
+body {
+  font-family: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+.font-mono,
+code,
+pre {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}

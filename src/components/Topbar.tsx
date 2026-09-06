@@ -85,6 +85,12 @@ export function Topbar({
                   {t}
                 </span>
               ))}
+              <span className="text-xs px-2 py-0.5 rounded font-mono font-bold tracking-widest bg-[#10b981]/20 text-[#10b981] border border-[#10b981]/40">
+                TV MODE
+              </span>
+            </div>
+            <div className="text-[10px] font-mono text-[#64748b] uppercase tracking-[0.15em] mt-0.5">
+              Real-time Port Monitoring &amp; Intelligence Dashboard
             </div>
           </div>
         </div>
@@ -112,8 +118,19 @@ export function Topbar({
           })}
         </nav>
 
-        {/* Right: Clocks & User */}
+        {/* Right: Sync, Clocks & User */}
         <div className="flex items-center gap-5">
+          {/* Sync Status */}
+          <div className="flex items-center gap-2 bg-[#060a14] px-3 py-1.5 rounded-lg border border-[#1c273e]/90 font-mono">
+            <div className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
+            <span className="text-[10px] text-[#10b981] uppercase tracking-widest font-semibold">Live</span>
+          </div>
+
+          {/* TV Mode Badge */}
+          <div className="bg-[#060a14] px-3 py-1.5 rounded-lg border border-[#1c273e]/90 font-mono">
+            <span className="text-[10px] text-[#94a3b8] uppercase tracking-widest">TV</span>
+          </div>
+
           {/* Live Dual Clocks */}
           <div className="flex items-center gap-3 bg-[#060a14] px-3.5 py-1.5 rounded-lg border border-[#1c273e]/90 font-mono">
             <div>
