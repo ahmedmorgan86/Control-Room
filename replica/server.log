@@ -1,0 +1,2 @@
+Replica serving http://localhost:3000
+Proxying API/auth to http://172.16.20.249:3000
