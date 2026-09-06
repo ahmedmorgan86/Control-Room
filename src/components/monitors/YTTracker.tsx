@@ -28,13 +28,11 @@ export function YTTracker({ terminal }: { terminal: Terminal }) {
   const [now, setNow] = useState<Date>(new Date());
   const [selectedTruck, setSelectedTruck] = useState<TruckPosition | null>(null);
 
-  // Live clock tick matching original
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // Load terminal SVG layout
   useEffect(() => {
     let active = true;
     fetch(`/api/terminal-layout?terminal=${terminal}`)
@@ -62,20 +60,20 @@ export function YTTracker({ terminal }: { terminal: Terminal }) {
   return (
     <div className="h-full w-full flex flex-col overflow-hidden bg-[var(--bg-page)]">
       {/* Exact Original Header */}
-      <header className="flex items-center justify-between px-6 h-14 shrink-0 bg-[var(--bg-panel)] border-b border-[var(--border-light)]">
+      <header className="flex items-center justify-between px-6 h-11 shrink-0 bg-[var(--bg-panel)] border-b border-[var(--border)]">
         <div className="flex items-center flex-1 pl-2">
           <h1 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-[0.05em]">
             {terminal} YT Tracker
           </h1>
         </div>
 
-        <div className="flex items-center justify-center gap-6 flex-1">
+        <div className="flex items-center justify-center gap-5 flex-1">
           <div className="flex items-center gap-2">
             <span className="relative flex h-3 w-3">
-              <span className="animate-pulse-dot absolute inline-flex h-full w-full rounded-full bg-[var(--safe)] opacity-75" />
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-[var(--safe)]" />
+              <span className="animate-pulse-dot absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
             </span>
-            <span className="text-sm font-bold text-[var(--safe)] uppercase tracking-widest">
+            <span className="text-sm font-bold text-emerald-600 uppercase tracking-widest">
               Live
             </span>
           </div>
@@ -102,7 +100,7 @@ export function YTTracker({ terminal }: { terminal: Terminal }) {
       {/* Map Viewport & Sidebar */}
       <div className="relative flex-1 min-h-0 flex gap-3 p-3">
         {svgLoading ? (
-          <div className="w-full h-full flex items-center justify-center bg-[var(--bg-panel)] rounded border border-[var(--border-light)]">
+          <div className="w-full h-full flex items-center justify-center bg-[var(--bg-panel)] rounded border border-[var(--border)]">
             <div className="text-center">
               <div className="w-8 h-8 border-2 border-[var(--border)] border-t-[var(--accent-blue)] rounded-full animate-spin mx-auto mb-3" />
               <p className="text-xs font-mono uppercase tracking-widest text-[var(--text-tertiary)]">
@@ -111,7 +109,7 @@ export function YTTracker({ terminal }: { terminal: Terminal }) {
             </div>
           </div>
         ) : (
-          <div className="flex-1 min-h-0 bg-[var(--bg-panel)] border border-[var(--border-light)] rounded relative overflow-hidden flex flex-col shadow-sm">
+          <div className="flex-1 min-h-0 bg-[var(--bg-panel)] border border-[var(--border)] rounded-lg relative overflow-hidden flex flex-col shadow-md">
             <div
               className={`flex-1 w-full h-full relative overflow-auto flex items-center justify-center transition-transform duration-500 ${
                 cameraView === "angled" ? "perspective-[1000px]" : ""
@@ -137,21 +135,22 @@ export function YTTracker({ terminal }: { terminal: Terminal }) {
               </div>
             </div>
 
-            {/* View Toggle Button matching original */}
+            {/* View Toggle Button */}
             <button
               type="button"
               onClick={toggleCameraView}
               aria-label={cameraView === "angled" ? "Switch to top view" : "Switch to perspective view"}
               title={cameraView === "angled" ? "Switch to top view" : "Switch to perspective view"}
-              className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-sm border border-[var(--border-light)] bg-[var(--bg-panel)]/80 text-[var(--text-primary)] shadow-md backdrop-blur-sm transition-colors hover:bg-[var(--bg-header)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-blue)]"
+              className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-md border border-[var(--border)]/55 bg-[var(--bg-panel)]/60 text-[var(--text-primary)] shadow-sm backdrop-blur-sm transition-colors hover:bg-[var(--bg-header)]/75 focus:outline-none focus:ring-2 focus:ring-[var(--accent-blue)]"
             >
               {cameraView === "angled" ? (
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                  <rect x="4" y="4" width="16" height="16" rx="1.5" />
+                  <path d="M8 8h8v8H8zM12 2v4M12 18v4M2 12h4M18 12h4" />
                 </svg>
               ) : (
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                  <path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3zM4 7.5l8 4.5 8-4.5M12 12v9" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               )}
             </button>
@@ -159,17 +158,17 @@ export function YTTracker({ terminal }: { terminal: Terminal }) {
         )}
 
         {/* Fleet Sidebar */}
-        <div className="w-[320px] shrink-0 bg-[var(--bg-panel)] border border-[var(--border-light)] rounded flex flex-col overflow-hidden shadow-sm">
-          <div className="px-4 py-3 bg-[var(--bg-header)] border-b border-[var(--border-light)] flex items-center justify-between shrink-0">
+        <div className="w-[320px] shrink-0 bg-[var(--bg-panel)] border border-[var(--border)] rounded-lg flex flex-col overflow-hidden shadow-md">
+          <div className="px-4 py-3 bg-[var(--bg-header)] border-b border-[var(--border)] flex items-center justify-between shrink-0">
             <span className="text-xs font-mono uppercase tracking-wider text-[var(--text-primary)] font-bold">
               Active Fleet ({trucks.length})
             </span>
-            <span className="text-[10px] font-mono text-[var(--safe)] font-bold uppercase">
+            <span className="text-[10px] font-mono text-emerald-500 font-bold uppercase">
               Online
             </span>
           </div>
 
-          <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar divide-y divide-[var(--border-light)]">
+          <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar divide-y divide-[var(--border)]">
             {trucks.length === 0 ? (
               <div className="p-6 text-center text-xs font-mono text-[var(--text-tertiary)]">
                 No active truck telemetry
@@ -187,7 +186,7 @@ export function YTTracker({ terminal }: { terminal: Terminal }) {
                   >
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-[var(--safe)] animate-pulse" />
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                         <span className="font-mono font-bold text-xs text-[var(--text-primary)]">
                           YT #{t.truckId}
                         </span>
