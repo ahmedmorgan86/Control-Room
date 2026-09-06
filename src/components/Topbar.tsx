@@ -1,21 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/context/auth";
 import { SCREEN_LABELS, screenTerminal, getUserScreens } from "@/lib/screens";
 import type { ScreenKey } from "@/lib/types";
-import { Logo } from "@/components/Logo";
 
 export function Topbar({
   activeScreen,
   onNavigate,
-  isDarkMode,
-  onToggleDarkMode,
 }: {
   activeScreen: ScreenKey | null;
   onNavigate: (s: ScreenKey) => void;
-  isDarkMode: boolean;
-  onToggleDarkMode: () => void;
 }) {
   const { user, login, logout } = useAuth();
   const [username, setUsername] = useState("");
@@ -23,10 +18,7 @@ export function Topbar({
   const [showPass, setShowPass] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const termRef = useRef<Record<string, HTMLButtonElement | null>>({});
-  const screenRef = useRef<Record<string, HTMLButtonElement | null>>({});
-  const [termMark, setTermMark] = useState({ left: 0, width: 0 });
-  const [screenMark, setScreenMark] = useState({ left: 0, width: 0 });
+  const [clock, setClock] = useState(() => new Date());
 
   const myScreens = useMemo<ScreenKey[]>(() => getUserScreens(user), [user]);
 
@@ -44,11 +36,9 @@ export function Topbar({
     : terminals[0] ?? "ACT";
 
   useEffect(() => {
-    const el = termRef.current[activeTerm];
-    if (el) setTermMark({ left: el.offsetLeft, width: el.offsetWidth });
-    const active = activeScreen ? screenRef.current[activeScreen] : null;
-    if (active) setScreenMark({ left: active.offsetLeft, width: active.offsetWidth });
-  }, [activeScreen, activeTerm, terminals, myScreens]);
+    const id = setInterval(() => setClock(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,149 +59,151 @@ export function Topbar({
     await logout();
   };
 
-  const darkToggle = (
-    <button
-      onClick={onToggleDarkMode}
-      className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none overflow-hidden ${isDarkMode ? "bg-[var(--accent-blue)]" : "bg-slate-300"}`}
-      aria-label="Toggle dark mode"
-    >
-      <span className="sr-only">Toggle dark mode</span>
-      <span className="absolute inset-0 flex items-center justify-between px-1.5 pointer-events-none">
-        <svg
-          className={`w-3 h-3 transition-opacity ${isDarkMode ? "opacity-100 text-white" : "opacity-0"}`}
-          fill="none" viewBox="0 0 24 24" stroke="currentColor"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-        </svg>
-        <svg
-          className={`w-3.5 h-3.5 transition-opacity ${!isDarkMode ? "opacity-100 text-amber-500" : "opacity-0"}`}
-          fill="none" viewBox="0 0 24 24" stroke="currentColor"
-        >
-          <circle cx="12" cy="12" r="5" fill="currentColor" />
-          <path strokeLinecap="round" strokeWidth={3} d="M12 1v1.5M12 21.5V23M4.22 4.22l1.06 1.06M18.72 18.72l1.06 1.06M1 12h1.5M21.5 12H23M4.22 19.78l1.06-1.06M18.72 5.28l1.06-1.06" />
-        </svg>
-      </span>
-      <span
-        className="inline-block h-5 w-5 rounded-full bg-white transition-transform shadow-sm z-10"
-        style={{ transform: isDarkMode ? "translateX(1.5rem)" : "translateX(0.25rem)" }}
-      />
-    </button>
-  );
-
   if (user) {
     return (
-      <div className="flex items-center justify-between px-6 py-3 bg-[var(--bg-topbar)] border-b border-[var(--border-topbar)] shrink-0" style={{ minHeight: "64px" }}>
-        <div className="flex items-center gap-4 flex-1">
-          <Logo darkMode={isDarkMode} />
-          <span className="text-xs font-mono font-bold text-[var(--text-secondary)] uppercase tracking-widest whitespace-nowrap">
-            Terminal Monitoring System
-          </span>
+      <header className="w-full bg-[#090e1c] border-b border-[#1c273e]/80 px-6 py-2.5 flex items-center justify-between shrink-0 z-50">
+        {/* Left: Port Control Identity */}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center justify-center w-11 h-11 rounded-lg bg-[#0e1321] border border-[#00f0ff]/40 glow-cyan">
+            <svg className="w-6 h-6 text-[#00f0ff]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <circle cx="12" cy="5" r="3" stroke="currentColor" />
+              <path d="M12 8v13m-7-5c0 3.866 3.134 7 7 7s7-3.134 7-7M5 12h14" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-black tracking-wider text-white">PORT SMART-OPS</span>
+              {terminals.map((t) => (
+                <span
+                  key={t}
+                  className={`text-xs px-2 py-0.5 rounded font-mono font-bold tracking-widest ${
+                    t === activeTerm
+                      ? "bg-[#00f0ff]/20 text-[#00f0ff] border border-[#00f0ff]/40"
+                      : "bg-[#1c273e]/60 text-[#94a3b8] border border-[#1c273e]/40"
+                  }`}
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
 
-        <nav className="flex items-center justify-center gap-4 flex-1">
-          {(() => {
-            const avail = ["ACT", "DCT"].filter((t) => myScreens.some((s) => s.startsWith(t)));
-            if (avail.length === 0) return null;
+        {/* Center: Screen Navigation */}
+        <nav className="hidden xl:flex items-center gap-1 bg-[#060a14]/80 p-1.5 rounded-xl border border-[#1c273e]/60 font-mono text-sm">
+          {myScreens.filter((s) => s.startsWith(activeTerm)).map((key) => {
+            const isActive = activeScreen === key;
             return (
-              <>
-                <div className={`relative flex rounded-full p-1 border border-[var(--border)] shadow-inner transition-colors duration-300 ${isDarkMode ? "bg-slate-700" : "bg-slate-300"}`}>
-                  <div
-                    className="absolute top-1 bottom-1 rounded-full bg-white transition-all duration-300 ease-in-out shadow-sm"
-                    style={{ width: `${termMark.width}px`, left: `${termMark.left}px` }}
-                  />
-                  {avail.map((t) => {
-                    const active = t === activeTerm;
-                    return (
-                      <button
-                        key={t}
-                        ref={(el) => { termRef.current[t] = el; }}
-                        onClick={() => {
-                          if (activeScreen && screenTerminal(activeScreen)) {
-                            const suffix = activeScreen.split("_").slice(1).join("_");
-                            const target = `${t}_${suffix}` as ScreenKey;
-                            if (myScreens.includes(target)) { onNavigate(target); return; }
-                          }
-                          const fallback = myScreens.find((k) => k.startsWith(t));
-                          if (fallback) onNavigate(fallback);
-                        }}
-                        className={`relative z-10 px-6 py-1 text-[11px] font-mono font-black uppercase tracking-wide whitespace-nowrap transition-colors duration-300 ${active ? "text-slate-900" : "text-slate-500 hover:text-slate-600"}`}
-                      >
-                        {t}
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="h-4 w-[1px] bg-[var(--border)] opacity-30" />
-                <div className={`relative flex rounded-full p-1 border border-[var(--border)] shadow-inner transition-colors duration-300 ${isDarkMode ? "bg-slate-700" : "bg-slate-300"}`}>
-                  <div
-                    className="absolute top-1 bottom-1 rounded-full bg-white transition-all duration-300 ease-in-out shadow-sm"
-                    style={{ width: `${screenMark.width}px`, left: `${screenMark.left}px` }}
-                  />
-                  {myScreens.filter((s) => s.startsWith(activeTerm)).map((key) => (
-                    <button
-                      key={key}
-                      ref={(el) => { screenRef.current[key] = el; }}
-                      onClick={() => onNavigate(key)}
-                      className={`relative z-10 px-5 py-1 rounded-full text-[11px] font-mono font-black uppercase tracking-wide whitespace-nowrap transition-colors duration-300 ${activeScreen === key ? "text-slate-900" : "text-slate-500 hover:text-slate-600"}`}
-                    >
-                      {SCREEN_LABELS[key].replace(/^ACT |^DCT /g, "")}
-                    </button>
-                  ))}
-                </div>
-              </>
+              <button
+                key={key}
+                onClick={() => onNavigate(key)}
+                className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                  isActive
+                    ? "bg-[#00f0ff]/20 text-[#00f0ff] border border-[#00f0ff]/40 glow-cyan"
+                    : "font-medium text-[#94a3b8] hover:text-white hover:bg-[#141c2e] transition"
+                }`}
+              >
+                {isActive && (
+                  <span className="w-2 h-2 rounded-full bg-[#00f0ff] animate-ping inline-block mr-2" />
+                )}
+                {SCREEN_LABELS[key].replace(/^ACT |^DCT /g, "")}
+              </button>
             );
-          })()}
+          })}
         </nav>
 
-        <div className="flex items-center justify-end gap-6 flex-1">
-          {darkToggle}
-          <div className="flex items-center gap-2">
-            <svg className="w-4.5 h-4.5 text-[var(--text-secondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-            <span className="text-xs font-mono font-bold text-[var(--text-primary)]">{user.full_name}</span>
+        {/* Right: Clocks & User */}
+        <div className="flex items-center gap-5">
+          {/* Live Dual Clocks */}
+          <div className="flex items-center gap-3 bg-[#060a14] px-3.5 py-1.5 rounded-lg border border-[#1c273e]/90 font-mono">
+            <div>
+              <div className="text-[10px] text-[#64748b] uppercase tracking-widest">Universal Time</div>
+              <div className="text-sm font-bold text-[#dee2f6]">
+                UTC {clock.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit", timeZone: "UTC" })}
+              </div>
+            </div>
+            <div className="w-px h-7 bg-[#1c273e]" />
+            <div>
+              <div className="text-[10px] text-[#00f0ff] uppercase tracking-widest font-semibold">Local Port</div>
+              <div className="text-sm font-black text-[#00f0ff]">
+                LOC {clock.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+              </div>
+            </div>
           </div>
-          <button
-            onClick={handleLogout}
-            className="h-7 px-3 text-xs font-mono font-bold uppercase tracking-wider text-[var(--accent-discharge)] border border-[var(--accent-discharge)] hover:bg-[var(--accent-discharge)] hover:text-white transition-all"
-          >
-            Logout
-          </button>
+
+          {/* User Info & Logout */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-[#94a3b8]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              <span className="text-xs font-mono font-bold text-[#dee2f6]">{user.full_name}</span>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="h-7 px-3 text-xs font-mono font-bold uppercase tracking-wider text-[#ef4444] border border-[#ef4444]/50 hover:bg-[#ef4444] hover:text-white transition-all"
+            >
+              Logout
+            </button>
+          </div>
         </div>
-      </div>
+      </header>
     );
   }
 
   return (
-    <div className="flex items-center justify-between px-6 py-3 bg-[var(--bg-topbar)] border-b border-[var(--border-topbar)] shrink-0" style={{ minHeight: "64px" }}>
+    <header className="w-full bg-[#090e1c] border-b border-[#1c273e]/80 px-6 py-2.5 flex items-center justify-between shrink-0 z-50">
       <div className="flex items-center gap-4">
-        <Logo darkMode={isDarkMode} />
-        <span className="text-xs font-mono font-bold text-[var(--text-secondary)] uppercase tracking-widest whitespace-nowrap">
-          Terminal Monitoring System
-        </span>
+        <div className="flex items-center justify-center w-11 h-11 rounded-lg bg-[#0e1321] border border-[#00f0ff]/40 glow-cyan">
+          <svg className="w-6 h-6 text-[#00f0ff]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <circle cx="12" cy="5" r="3" stroke="currentColor" />
+            <path d="M12 8v13m-7-5c0 3.866 3.134 7 7 7s7-3.134 7-7M5 12h14" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+        <div>
+          <span className="text-lg font-black tracking-wider text-white">PORT SMART-OPS</span>
+        </div>
       </div>
+
       <div className="flex items-center gap-6">
-        {darkToggle}
+        {/* Dual Clocks */}
+        <div className="flex items-center gap-3 bg-[#060a14] px-3.5 py-1.5 rounded-lg border border-[#1c273e]/90 font-mono">
+          <div>
+            <div className="text-[10px] text-[#64748b] uppercase tracking-widest">Universal Time</div>
+            <div className="text-sm font-bold text-[#dee2f6]">
+              UTC {clock.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit", timeZone: "UTC" })}
+            </div>
+          </div>
+          <div className="w-px h-7 bg-[#1c273e]" />
+          <div>
+            <div className="text-[10px] text-[#00f0ff] uppercase tracking-widest font-semibold">Local Port</div>
+            <div className="text-sm font-black text-[#00f0ff]">
+              LOC {clock.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+            </div>
+          </div>
+        </div>
+
+        {/* Login Form */}
         <form onSubmit={handleLogin} className="flex items-center gap-3">
           {loginError && (
-            <span className="text-xs font-mono text-[var(--accent-discharge)] mr-2 animate-pulse">{loginError}</span>
+            <span className="text-xs font-mono text-[#ef4444] mr-2 animate-pulse">{loginError}</span>
           )}
           <input
             type="text" placeholder="Username" value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="h-7 px-3 text-xs font-mono bg-[var(--bg-input)] border border-[var(--border)] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:border-[var(--accent-blue)] transition-colors w-36"
+            className="h-7 px-3 text-xs font-mono bg-[#141c2e] border border-[#1c273e] text-[#dee2f6] placeholder-[#64748b] focus:outline-none focus:border-[#00f0ff] transition-colors w-36"
             autoComplete="username" disabled={submitting}
           />
           <div className="relative group">
             <input
               type={showPass ? "text" : "password"} placeholder="Password" value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="h-7 pl-3 pr-8 text-xs font-mono bg-[var(--bg-input)] border border-[var(--border)] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:border-[var(--accent-blue)] transition-colors w-40"
+              className="h-7 pl-3 pr-8 text-xs font-mono bg-[#141c2e] border border-[#1c273e] text-[#dee2f6] placeholder-[#64748b] focus:outline-none focus:border-[#00f0ff] transition-colors w-40"
               autoComplete="current-password" disabled={submitting}
             />
             <button
               type="button" onClick={() => setShowPass(!showPass)} disabled={submitting}
-              className="absolute right-2 top-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
+              className="absolute right-2 top-1/2 text-[#64748b] hover:text-[#dee2f6] transition-colors"
               style={{ transform: "translateY(-50%)" }}
             >
               {showPass ? (
@@ -228,12 +220,12 @@ export function Topbar({
           </div>
           <button
             type="submit" disabled={submitting || !username || !password}
-            className="h-7 px-4 text-xs font-mono font-bold uppercase tracking-wider text-white bg-[var(--accent-blue)] hover:opacity-90 disabled:opacity-40 transition-opacity"
+            className="h-7 px-4 text-xs font-mono font-bold uppercase tracking-wider text-[#060a14] bg-[#00f0ff] hover:bg-[#00f0ff]/90 disabled:opacity-40 transition-opacity"
           >
             {submitting ? "..." : "Login"}
           </button>
         </form>
       </div>
-    </div>
+    </header>
   );
 }

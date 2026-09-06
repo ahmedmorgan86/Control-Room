@@ -14,13 +14,13 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
 };
 
 export const BLOCK_COLORS: Record<BlockType, string> = {
-  DG: "#be185d",
-  RF: "#3b82f6",
-  EMPTY: "#94a3b8",
-  IMP_EXP: "#4d7c0f",
-  IMP: "#0f766e",
+  DG: "#dc2626",
+  RF: "#06b6d4",
+  EMPTY: "#64748b",
+  IMP_EXP: "#10b981",
+  IMP: "#059669",
   EXP: "#10b981",
-  CFS: "#6366f1",
+  CFS: "#8b5cf6",
   INSP: "#06b6d4",
   NEGLECT: "#a855f7",
   OTHER: "rgba(255,255,255,0.1)",
@@ -30,7 +30,7 @@ export const SEVERITY_COLORS: Record<Severity, string> = {
   CRITICAL: "#ef4444",
   HIGH: "#f97316",
   MEDIUM: "#eab308",
-  LOW: "#8a7a3a",
+  LOW: "#64748b",
 };
 
 export const EQU_LABELS: Record<EquType, string> = {
@@ -44,7 +44,7 @@ export const EQU_LABELS: Record<EquType, string> = {
 };
 
 export const EQU_ACCENTS: Record<EquType, string> = {
-  QC: "#0046af",
+  QC: "#f59e0b",
   YT: "#10b981",
   RTG: "#f97316",
   RS: "#0ea5e9",
@@ -73,17 +73,17 @@ export function formatArrival(iso: string | null | undefined): string {
 
 export function fillColor(ratio: number): string {
   if (ratio > 0.85) return "#ef4444";
-  if (ratio > 0.7) return "#eab308";
-  if (ratio > 0.5) return "#22c55e";
-  return "#3b82f6";
+  if (ratio > 0.7) return "#f59e0b";
+  if (ratio > 0.5) return "#10b981";
+  return "#00f0ff";
 }
 
 export function tttColor(min: number | null | undefined): string {
-  if (min == null) return "#94a3b8";
+  if (min == null) return "#64748b";
   if (min >= 30) return "#ef4444";
   if (min >= 20) return "#f97316";
-  if (min >= 10) return "#eab308";
-  return "#22c55e";
+  if (min >= 10) return "#f59e0b";
+  return "#10b981";
 }
 
 export function tttLabel(min: number | null | undefined): string {

@@ -1,9 +1,9 @@
 "use client";
 
-export function Logo({ darkMode }: { darkMode: boolean }) {
+export function Logo() {
   return (
     <img
-      src={darkMode ? "/images/logo1_darkmode.png" : "/images/logo1.png"}
+      src="/images/logo1_darkmode.png"
       alt="Logo"
       className="h-11 w-auto object-contain"
     />

@@ -13,9 +13,9 @@ import type { ScreenKey, Terminal } from "@/lib/types";
 
 function LoadingScreen() {
   return (
-    <div className="w-screen h-screen flex flex-col items-center justify-center bg-[var(--bg-page)]">
-      <div className="w-8 h-8 border-2 border-[var(--border)] border-t-[var(--accent-blue)] rounded-full animate-spin mb-3" />
-      <p className="text-xs font-mono uppercase tracking-widest text-[var(--text-tertiary)]">
+    <div className="w-screen h-screen flex flex-col items-center justify-center bg-[#060a14]">
+      <div className="w-10 h-10 border-2 border-[#1c273e] border-t-[#00f0ff] rounded-full animate-spin mb-4" />
+      <p className="text-xs font-mono uppercase tracking-[0.2em] text-[#64748b]">
         Initializing System
       </p>
     </div>
@@ -38,50 +38,23 @@ function Dashboard() {
   const { user } = useAuth();
   const myScreens = useMemo(() => getUserScreens(user), [user]);
   const [screen, setScreen] = useState<ScreenKey | null>(() => myScreens[0] ?? null);
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(() =>
-    typeof window !== "undefined" && window.localStorage.getItem("dark") === "1",
-  );
-
-  // apply dark class on mount / whenever state changes
-  useEffect(() => {
-    document.body.classList.toggle("dark", isDarkMode);
-  }, [isDarkMode]);
-
-  const toggleDark = () => {
-    setIsDarkMode((prev) => {
-      const next = !prev;
-      document.body.classList.toggle("dark", next);
-      window.localStorage.setItem("dark", next ? "1" : "0");
-      return next;
-    });
-  };
 
   useEffect(() => {
-    const handler = () => {
-      setIsDarkMode((prev) => {
-        const next = !prev;
-        document.body.classList.toggle("dark", next);
-        return next;
-      });
-    };
-    window.addEventListener("toggle-dark-mode", handler);
-    return () => window.removeEventListener("toggle-dark-mode", handler);
+    document.body.classList.add("dark");
   }, []);
 
   return (
-    <div className="w-screen h-screen flex flex-col bg-[var(--bg-page)] overflow-hidden">
+    <div className="w-screen h-screen flex flex-col bg-[#060a14] overflow-hidden">
       <Topbar
         activeScreen={screen}
         onNavigate={setScreen}
-        isDarkMode={isDarkMode}
-        onToggleDarkMode={toggleDark}
       />
       <div className="flex-1 min-h-0 flex">
         {user && screen ? (
           <ScreenContent screen={screen} />
         ) : (
           <div className="flex-1 flex items-center justify-center">
-            <p className="text-xs font-mono text-[var(--text-tertiary)]">Please log in to continue</p>
+            <p className="text-xs font-mono text-[#64748b] uppercase tracking-[0.15em]">Please log in to continue</p>
           </div>
         )}
       </div>

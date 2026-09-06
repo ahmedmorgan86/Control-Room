@@ -58,11 +58,11 @@ export function YTTracker({ terminal }: { terminal: Terminal }) {
   }, []);
 
   return (
-    <div className="h-full w-full flex flex-col overflow-hidden bg-[var(--bg-page)]">
-      {/* Exact Original Header */}
-      <header className="flex items-center justify-between px-6 h-11 shrink-0 bg-[var(--bg-panel)] border-b border-[var(--border)]">
+    <div className="h-full w-full flex flex-col overflow-hidden bg-[#060a14]">
+      {/* Header */}
+      <header className="flex items-center justify-between px-6 h-11 shrink-0 bg-[#0e1321] border-b border-[#1c273e]">
         <div className="flex items-center flex-1 pl-2">
-          <h1 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-[0.05em]">
+          <h1 className="text-xl font-black text-[#dee2f6] uppercase tracking-[0.05em]">
             {terminal} YT Tracker
           </h1>
         </div>
@@ -70,15 +70,15 @@ export function YTTracker({ terminal }: { terminal: Terminal }) {
         <div className="flex items-center justify-center gap-5 flex-1">
           <div className="flex items-center gap-2">
             <span className="relative flex h-3 w-3">
-              <span className="animate-pulse-dot absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
+              <span className="animate-pulse-dot absolute inline-flex h-full w-full rounded-full bg-[#10b981] opacity-75" />
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-[#10b981]" />
             </span>
-            <span className="text-sm font-bold text-emerald-600 uppercase tracking-widest">
+            <span className="text-sm font-bold text-[#10b981] uppercase tracking-widest">
               Live
             </span>
           </div>
 
-          <span className="text-sm font-mono font-semibold text-[var(--text-secondary)]">
+          <span className="text-sm font-mono font-semibold text-[#94a3b8]">
             {formatCount(trucks.length)} YT{trucks.length === 1 ? "" : "s"} Tracked
           </span>
 
@@ -87,10 +87,10 @@ export function YTTracker({ terminal }: { terminal: Terminal }) {
 
         <div className="flex items-center justify-end flex-1 pr-2">
           <div className="text-right">
-            <div className="text-xl font-bold font-mono text-[var(--text-primary)] tabular-nums leading-none">
+            <div className="text-xl font-bold font-mono text-[#dee2f6] tabular-nums leading-none">
               {now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
             </div>
-            <div className="text-xs font-mono font-semibold text-[var(--text-tertiary)] uppercase leading-none mt-1">
+            <div className="text-xs font-mono font-semibold text-[#64748b] uppercase leading-none mt-1">
               {now.toLocaleDateString("en-GB", { weekday: "short", day: "2-digit", month: "short", year: "numeric" })}
             </div>
           </div>
@@ -100,16 +100,16 @@ export function YTTracker({ terminal }: { terminal: Terminal }) {
       {/* Map Viewport & Sidebar */}
       <div className="relative flex-1 min-h-0 flex gap-3 p-3">
         {svgLoading ? (
-          <div className="w-full h-full flex items-center justify-center bg-[var(--bg-panel)] rounded border border-[var(--border)]">
+          <div className="w-full h-full flex items-center justify-center bg-[#0e1321] rounded border border-[#1c273e]">
             <div className="text-center">
-              <div className="w-8 h-8 border-2 border-[var(--border)] border-t-[var(--accent-blue)] rounded-full animate-spin mx-auto mb-3" />
-              <p className="text-xs font-mono uppercase tracking-widest text-[var(--text-tertiary)]">
+              <div className="w-10 h-10 border-2 border-[#1c273e] border-t-[#00f0ff] rounded-full animate-spin mx-auto mb-3" />
+              <p className="text-xs font-mono uppercase tracking-[0.2em] text-[#64748b]">
                 Loading Terminal Layout
               </p>
             </div>
           </div>
         ) : (
-          <div className="flex-1 min-h-0 bg-[var(--bg-panel)] border border-[var(--border)] rounded-lg relative overflow-hidden flex flex-col shadow-md">
+          <div className="flex-1 min-h-0 bg-[#0e1321] border border-[#1c273e] rounded-xl relative overflow-hidden flex flex-col shadow-lg">
             <div
               className={`flex-1 w-full h-full relative overflow-auto flex items-center justify-center transition-transform duration-500 ${
                 cameraView === "angled" ? "perspective-[1000px]" : ""
@@ -119,7 +119,7 @@ export function YTTracker({ terminal }: { terminal: Terminal }) {
                 className="w-full h-full flex items-center justify-center transition-all duration-500"
                 style={{
                   transform: cameraView === "angled" ? "rotateX(15deg) scale(0.95)" : undefined,
-                  background: svgContent ? undefined : "var(--bg-page)",
+                  background: svgContent ? undefined : "#060a14",
                 }}
               >
                 {svgContent ? (
@@ -128,7 +128,7 @@ export function YTTracker({ terminal }: { terminal: Terminal }) {
                     dangerouslySetInnerHTML={{ __html: svgContent }}
                   />
                 ) : (
-                  <div className="text-xs font-mono text-[var(--text-tertiary)]">
+                  <div className="text-xs font-mono text-[#64748b]">
                     Terminal Layout SVG Not Found
                   </div>
                 )}
@@ -141,7 +141,7 @@ export function YTTracker({ terminal }: { terminal: Terminal }) {
               onClick={toggleCameraView}
               aria-label={cameraView === "angled" ? "Switch to top view" : "Switch to perspective view"}
               title={cameraView === "angled" ? "Switch to top view" : "Switch to perspective view"}
-              className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-md border border-[var(--border)]/55 bg-[var(--bg-panel)]/60 text-[var(--text-primary)] shadow-sm backdrop-blur-sm transition-colors hover:bg-[var(--bg-header)]/75 focus:outline-none focus:ring-2 focus:ring-[var(--accent-blue)]"
+              className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-md border border-[#1c273e]/55 bg-[#0e1321]/60 text-[#dee2f6] shadow-sm backdrop-blur-sm transition-colors hover:bg-[#141c2e]/75 focus:outline-none focus:ring-2 focus:ring-[#00f0ff]"
             >
               {cameraView === "angled" ? (
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
@@ -158,19 +158,19 @@ export function YTTracker({ terminal }: { terminal: Terminal }) {
         )}
 
         {/* Fleet Sidebar */}
-        <div className="w-[320px] shrink-0 bg-[var(--bg-panel)] border border-[var(--border)] rounded-lg flex flex-col overflow-hidden shadow-md">
-          <div className="px-4 py-3 bg-[var(--bg-header)] border-b border-[var(--border)] flex items-center justify-between shrink-0">
-            <span className="text-xs font-mono uppercase tracking-wider text-[var(--text-primary)] font-bold">
+        <div className="w-[320px] shrink-0 bg-[#0e1321] border border-[#1c273e] rounded-xl flex flex-col overflow-hidden shadow-lg">
+          <div className="px-4 py-3 bg-[#141c2e] border-b border-[#1c273e] flex items-center justify-between shrink-0">
+            <span className="text-xs font-mono uppercase tracking-wider text-[#dee2f6] font-bold">
               Active Fleet ({trucks.length})
             </span>
-            <span className="text-[10px] font-mono text-emerald-500 font-bold uppercase">
+            <span className="text-[10px] font-mono text-[#10b981] font-bold uppercase">
               Online
             </span>
           </div>
 
-          <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar divide-y divide-[var(--border)]">
+          <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar divide-y divide-[#1c273e]">
             {trucks.length === 0 ? (
-              <div className="p-6 text-center text-xs font-mono text-[var(--text-tertiary)]">
+              <div className="p-6 text-center text-xs font-mono text-[#64748b]">
                 No active truck telemetry
               </div>
             ) : (
@@ -180,39 +180,39 @@ export function YTTracker({ terminal }: { terminal: Terminal }) {
                   <div
                     key={t.truckId}
                     onClick={() => setSelectedTruck(t)}
-                    className={`p-3 cursor-pointer transition-colors hover:bg-[var(--bg-nav-hover)] ${
-                      isSelected ? "bg-[var(--accent-blue)]/10 border-l-4 border-[var(--accent-blue)]" : ""
+                    className={`p-3 cursor-pointer transition-colors hover:bg-[#00f0ff]/5 ${
+                      isSelected ? "bg-[#00f0ff]/10 border-l-4 border-[#00f0ff]" : ""
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                        <span className="font-mono font-bold text-xs text-[var(--text-primary)]">
+                        <span className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
+                        <span className="font-mono font-bold text-xs text-[#dee2f6]">
                           YT #{t.truckId}
                         </span>
                         {t.status && (
-                          <span className="text-[9px] font-mono font-bold uppercase px-1 rounded bg-[var(--accent-blue)]/15 text-[var(--accent-blue)]">
+                          <span className="text-[9px] font-mono font-bold uppercase px-1 rounded bg-[#00f0ff]/15 text-[#00f0ff]">
                             {t.status}
                           </span>
                         )}
                       </div>
-                      <span className="text-[10px] font-mono text-[var(--text-tertiary)]">
+                      <span className="text-[10px] font-mono text-[#64748b]">
                         {new Date(t.updateTime).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
                       </span>
                     </div>
 
                     {t.driverName && (
-                      <div className="text-[10px] font-mono text-[var(--text-secondary)] truncate mb-0.5">
+                      <div className="text-[10px] font-mono text-[#94a3b8] truncate mb-0.5">
                         {t.driverName}
                       </div>
                     )}
 
-                    <div className="grid grid-cols-2 gap-1 text-[10px] font-mono text-[var(--text-secondary)] mt-1">
+                    <div className="grid grid-cols-2 gap-1 text-[10px] font-mono text-[#94a3b8] mt-1">
                       <div>
-                        <span className="text-[var(--text-tertiary)]">Lat:</span> {t.latitude.toFixed(4)}
+                        <span className="text-[#64748b]">Lat:</span> {t.latitude.toFixed(4)}
                       </div>
                       <div>
-                        <span className="text-[var(--text-tertiary)]">Lon:</span> {t.longitude.toFixed(4)}
+                        <span className="text-[#64748b]">Lon:</span> {t.longitude.toFixed(4)}
                       </div>
                     </div>
                   </div>

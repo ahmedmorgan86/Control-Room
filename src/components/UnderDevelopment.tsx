@@ -18,14 +18,14 @@ const UNDER_DEVELOPMENT: Record<ScreenKey, boolean> = {
 
 export function UnderDevelopment({ name }: { name: string }) {
   return (
-    <div className="flex-1 flex flex-col items-center justify-center bg-[var(--bg-page)]">
+    <div className="flex-1 flex flex-col items-center justify-center bg-[#060a14]">
       <div className="text-center">
-        <p className="text-xs font-mono font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)] mb-2">
+        <p className="text-xs font-mono font-bold uppercase tracking-[0.2em] text-[#64748b] mb-2">
           Module Under Development
         </p>
-        <p className="text-[11px] font-mono text-[var(--text-tertiary)]">
+        <p className="text-[11px] font-mono text-[#64748b]">
           The{" "}
-          <span className="font-bold text-[var(--text-secondary)]">{name}</span>{" "}
+          <span className="font-bold text-[#94a3b8]">{name}</span>{" "}
           screen is not yet available.
         </p>
       </div>
