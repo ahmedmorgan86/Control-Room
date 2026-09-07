@@ -1,9 +1,5 @@
 "use client";
 
-// Lightweight WebAudio alert tone — no external audio file needed, which
-// keeps this safe to ship to older Smart TV browsers with no network
-// access to fetch an mp3. Two short high-low beeps read as "attention"
-// without being a full siren.
 let ctx: AudioContext | null = null;
 
 function getCtx(): AudioContext | null {
@@ -28,10 +24,6 @@ function beep(startAt: number, freq: number, durationSec: number, audio: AudioCo
   osc.stop(startAt + durationSec);
 }
 
-/** Plays a short two-tone alert beep. Call only in response to a real
- *  new critical event — browsers may block audio before any user
- *  interaction has happened on the page, which is fine: the visual
- *  alert still fires either way. */
 export function playCriticalAlert() {
   const audio = getCtx();
   if (!audio) return;

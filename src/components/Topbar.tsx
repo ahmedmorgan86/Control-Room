@@ -72,7 +72,7 @@ export function Topbar({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-lg font-black tracking-wider text-white">PORT SMART-OPS</span>
+              <span className="text-lg font-black tracking-wider text-white">Terminal Monitoring System</span>
               {terminals.map((t) => (
                 <span
                   key={t}
@@ -89,8 +89,8 @@ export function Topbar({
                 TV MODE
               </span>
             </div>
-            <div className="text-[10px] font-mono text-[#64748b] uppercase tracking-[0.15em] mt-0.5">
-              Real-time Port Monitoring &amp; Intelligence Dashboard
+            <div className="text-[10px] font-mono text-[#64748b] uppercase tracking-[0.15em] mt-0.5" dir="rtl">
+              مركز إدارة الموانئ والتحكم الذكي بمحطة الحاويات العملاقة
             </div>
           </div>
         </div>
@@ -112,7 +112,7 @@ export function Topbar({
                 {isActive && (
                   <span className="w-2 h-2 rounded-full bg-[#00f0ff] animate-ping inline-block mr-2" />
                 )}
-                {SCREEN_LABELS[key].replace(/^ACT |^DCT /g, "")}
+                {SCREEN_LABELS[key]}
               </button>
             );
           })}
@@ -120,18 +120,11 @@ export function Topbar({
 
         {/* Right: Sync, Clocks & User */}
         <div className="flex items-center gap-5">
-          {/* Sync Status */}
           <div className="flex items-center gap-2 bg-[#060a14] px-3 py-1.5 rounded-lg border border-[#1c273e]/90 font-mono">
             <div className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
             <span className="text-[10px] text-[#10b981] uppercase tracking-widest font-semibold">Live</span>
           </div>
 
-          {/* TV Mode Badge */}
-          <div className="bg-[#060a14] px-3 py-1.5 rounded-lg border border-[#1c273e]/90 font-mono">
-            <span className="text-[10px] text-[#94a3b8] uppercase tracking-widest">TV</span>
-          </div>
-
-          {/* Live Dual Clocks */}
           <div className="flex items-center gap-3 bg-[#060a14] px-3.5 py-1.5 rounded-lg border border-[#1c273e]/90 font-mono">
             <div>
               <div className="text-[10px] text-[#64748b] uppercase tracking-widest">Universal Time</div>
@@ -148,7 +141,6 @@ export function Topbar({
             </div>
           </div>
 
-          {/* User Info & Logout */}
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <svg className="w-4 h-4 text-[#94a3b8]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -178,12 +170,11 @@ export function Topbar({
           </svg>
         </div>
         <div>
-          <span className="text-lg font-black tracking-wider text-white">PORT SMART-OPS</span>
+          <span className="text-lg font-black tracking-wider text-white">Terminal Monitoring System</span>
         </div>
       </div>
 
       <div className="flex items-center gap-6">
-        {/* Dual Clocks */}
         <div className="flex items-center gap-3 bg-[#060a14] px-3.5 py-1.5 rounded-lg border border-[#1c273e]/90 font-mono">
           <div>
             <div className="text-[10px] text-[#64748b] uppercase tracking-widest">Universal Time</div>
@@ -200,7 +191,6 @@ export function Topbar({
           </div>
         </div>
 
-        {/* Login Form */}
         <form onSubmit={handleLogin} className="flex items-center gap-3">
           {loginError && (
             <span className="text-xs font-mono text-[#ef4444] mr-2 animate-pulse">{loginError}</span>

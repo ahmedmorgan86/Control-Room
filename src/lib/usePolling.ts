@@ -46,9 +46,6 @@ export function usePolling<T>(
   }, [url, enabled]);
 
   useEffect(() => {
-    // Kick off the first poll and schedule the rest.
-    // setState only happens after an awaited fetch, so this is inherently async.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchData();
     const id = setInterval(() => void fetchData(), intervalMs);
     return () => {

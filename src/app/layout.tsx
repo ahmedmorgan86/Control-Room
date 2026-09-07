@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "PORT SMART-OPS | Terminal Monitoring System",
+  title: "Terminal Monitoring System | PORT SMART-OPS",
   description:
     "Real-time vessel operations monitoring for port control room displays.",
   icons: {

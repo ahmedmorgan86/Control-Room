@@ -7,7 +7,6 @@ import { VesselMonitor } from "@/components/monitors/VesselMonitor";
 import { YardMonitor } from "@/components/monitors/YardMonitor";
 import { EquipmentMonitor } from "@/components/monitors/EquipmentMonitor";
 import { YTTracker } from "@/components/monitors/YTTracker";
-import { UnderDevelopment, isUnderDevelopment } from "@/components/UnderDevelopment";
 import { SCREEN_LABELS, screenTerminal, getUserScreens } from "@/lib/screens";
 import type { ScreenKey, Terminal } from "@/lib/types";
 
@@ -24,14 +23,18 @@ function LoadingScreen() {
 
 function ScreenContent({ screen }: { screen: ScreenKey }) {
   const terminal = (screenTerminal(screen) ?? "ACT") as Terminal;
-  if (isUnderDevelopment(screen)) {
-    return <UnderDevelopment name={SCREEN_LABELS[screen]} />;
-  }
   if (screen.includes("VSL")) return <VesselMonitor key={screen} terminalCode={terminal} />;
   if (screen.includes("EQU")) return <EquipmentMonitor key={screen} terminalCode={terminal} />;
   if (screen.includes("YT_TRACKER")) return <YTTracker key={screen} terminal={terminal} />;
   if (screen.includes("YARD")) return <YardMonitor key={screen} terminalCode={terminal} />;
-  return <UnderDevelopment key={screen} name={SCREEN_LABELS[screen]} />;
+  return (
+    <div className="flex-1 flex items-center justify-center">
+      <div className="border border-[#1c273e] px-12 py-8 text-center rounded-xl">
+        <div className="text-xs font-bold font-mono uppercase tracking-widest mb-2 text-[#64748b]">Coming Soon</div>
+        <p className="text-[11px] font-mono text-[#64748b]">{SCREEN_LABELS[screen]}</p>
+      </div>
+    </div>
+  );
 }
 
 function Dashboard() {
@@ -45,10 +48,7 @@ function Dashboard() {
 
   return (
     <div className="w-screen h-screen flex flex-col bg-[#060a14] overflow-hidden">
-      <Topbar
-        activeScreen={screen}
-        onNavigate={setScreen}
-      />
+      <Topbar activeScreen={screen} onNavigate={setScreen} />
       <div className="flex-1 min-h-0 flex">
         {user && screen ? (
           <ScreenContent screen={screen} />
@@ -64,12 +64,8 @@ function Dashboard() {
 
 function Shell() {
   const { user, isLoading } = useAuth();
-
   if (isLoading) return <LoadingScreen />;
-
-  return (
-    <Dashboard key={user ? user.username : "anon"} />
-  );
+  return <Dashboard key={user ? user.username : "anon"} />;
 }
 
 export default function Page() {

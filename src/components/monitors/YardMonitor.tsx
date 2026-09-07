@@ -1,89 +1,43 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import type { BlockType, YardBlock, YardData } from "@/lib/types";
+import { useMemo, useState } from "react";
+import type { YardData, BlockType } from "@/lib/types";
 import { usePolling } from "@/lib/usePolling";
-import { BLOCK_COLORS, SEVERITY_COLORS } from "@/lib/ui";
-import { playCriticalAlert } from "@/lib/alertSound";
+import { formatCount, BLOCK_COLORS } from "@/lib/ui";
 import { MonitorHeader } from "@/components/MonitorHeader";
 
-function BlockCard({ block }: { block: YardBlock }) {
-  const color = BLOCK_COLORS[block.blockType];
-  const fillPct = Math.round(block.fillRatio * 100);
-
-  return (
-    <div
-      className="flex flex-col bg-[#0e1321] border border-[#1c273e] rounded-lg overflow-hidden hover:border-[#00f0ff]/30 transition-all duration-200"
-      style={{ borderTop: `4px solid ${color}` }}
-    >
-      <div className="flex items-center justify-between px-2 py-1.5">
-        <span className="text-lg font-mono font-black tracking-wider" style={{ color }}>
-          {block.blockId}
-        </span>
-        {block.violationCount > 0 && (
-          <span className="flex items-center gap-1 px-1.5 h-5 rounded-sm text-white text-[9px] font-mono font-bold border border-white/20 shrink-0" style={{ backgroundColor: SEVERITY_COLORS.CRITICAL }}>
-            <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-            {block.violationCount}
-          </span>
-        )}
-      </div>
-
-      <div className="px-2 pb-1 flex items-center justify-between">
-        <div className="flex items-center gap-2 text-[10px] font-mono text-[#94a3b8]">
-          <span>{block.occupiedTeu}<span className="text-[#64748b]">/{block.capacityTeu}</span></span>
-          <span className="font-bold" style={{ color: fillPct > 85 ? "#ef4444" : fillPct > 70 ? "#f59e0b" : "#10b981" }}>{fillPct}%</span>
-        </div>
-        {block.neglectCount > 0 && (
-          <span className="flex items-center gap-0.5 px-1.5 h-5 rounded-sm bg-[#a855f7]/90 text-white text-[9px] font-mono font-bold border border-[#a855f7]/30 shrink-0">
-            <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            {block.neglectCount}
-          </span>
-        )}
-      </div>
-
-      <div className="relative h-4 mx-1.5 mb-1.5 rounded-full overflow-hidden bg-[#1c273e]">
-        <div
-          className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
-          style={{ width: `${fillPct}%`, backgroundColor: color }}
-        />
-        <span className="absolute inset-0 flex items-center justify-center text-[8px] font-mono font-bold text-white drop-shadow-sm">
-          {fillPct}%
-        </span>
-      </div>
-    </div>
-  );
-}
-
-const ZONE_CATEGORIES = [
-  { label: "Special Containers", types: ["DG", "RF"] as BlockType[], color: "#dc2626" },
-  { label: "High Traffic", types: ["IMP", "EXP", "IMP_EXP"] as BlockType[], color: "#00f0ff" },
-  { label: "Auxiliary", types: ["EMPTY", "INSP", "CFS", "NEGLECT", "OTHER"] as BlockType[], color: "#64748b" },
+const ZONE_CATEGORIES: { label: string; types: BlockType[] }[] = [
+  { label: "Import", types: ["IMP", "IMP_EXP"] },
+  { label: "Export", types: ["EXP"] },
+  { label: "Reefer", types: ["RF"] },
+  { label: "Hazardous", types: ["DG"] },
+  { label: "Empty", types: ["EMPTY"] },
+  { label: "Other", types: ["CFS", "INSP", "NEGLECT", "OTHER"] },
 ];
 
 export function YardMonitor({ terminalCode }: { terminalCode: string }) {
   const { data, loading, error, lastUpdated } = usePolling<YardData>(`/api/yard?terminal=${terminalCode}`, 60000);
-  const knownCriticalRef = useRef<Set<string> | null>(null);
+  const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!data) return;
-    const currentCritical = new Set(
-      data.violations.filter((v) => v.severity === "CRITICAL").map((v) => `${v.cntrNo}|${v.type}`),
-    );
-    const previous = knownCriticalRef.current;
-    if (previous) {
-      const hasNew = [...currentCritical].some((key) => !previous.has(key));
-      if (hasNew) playCriticalAlert();
+  const blocks = data?.blocks ?? [];
+  const violations = data?.violations ?? [];
+  const summary = data?.summary;
+
+  const blocksByType = useMemo(() => {
+    const map: Record<BlockType, typeof blocks> = {} as Record<BlockType, typeof blocks>;
+    for (const b of blocks) {
+      (map[b.blockType] ??= []).push(b);
     }
-    knownCriticalRef.current = currentCritical;
-  }, [data]);
+    return map;
+  }, [blocks]);
 
   if (loading && !data) {
     return (
       <>
-        <MonitorHeader title={`${terminalCode} Yard Monitoring`} />
+        <MonitorHeader title={`${terminalCode} Yard Monitor`} />
         <div className="flex-1 flex flex-col items-center justify-center text-[#64748b]">
           <div className="w-10 h-10 border-2 border-[#1c273e] border-t-[#00f0ff] rounded-full animate-spin mb-3" />
-          <p className="text-xs font-mono uppercase tracking-[0.2em]">Connecting to Yard Database</p>
+          <p className="text-xs font-mono uppercase tracking-[0.2em]">Loading Yard Data</p>
         </div>
       </>
     );
@@ -91,182 +45,137 @@ export function YardMonitor({ terminalCode }: { terminalCode: string }) {
   if (error && !data) {
     return (
       <>
-        <MonitorHeader title={`${terminalCode} Yard Monitoring`} />
-        <div className="flex-1 flex flex-col items-center justify-center">
+        <MonitorHeader title={`${terminalCode} Yard Monitor`} />
+        <div className="flex-1 flex flex-col items-center justify-center h-full">
           <div className="border border-[#ef4444]/50 bg-[#ef4444]/10 px-8 py-6 text-center max-w-md rounded-xl">
             <div className="text-xs font-bold font-mono text-[#ef4444] uppercase tracking-widest mb-2">Connection Fault</div>
             <p className="text-[11px] font-mono text-[#94a3b8] mb-4">{error}</p>
-            <button className="px-4 py-1.5 text-[11px] font-mono font-bold uppercase tracking-wider text-white bg-[#ef4444] hover:bg-[#ef4444]/90 transition-opacity">
-              Retry
-            </button>
           </div>
         </div>
       </>
     );
   }
-  if (!data) return null;
-
-  const summary = data.summary;
 
   return (
     <>
       <MonitorHeader
-        title={`${terminalCode} Yard Monitoring`}
+        title={`${terminalCode} Yard Monitor`}
         stats={
-          <span className="text-sm font-mono font-semibold text-[#94a3b8]">
-            {data.blocks.length} Blocks
-          </span>
+          <div className="flex items-center gap-3 text-xs font-mono">
+            <span className="text-[#94a3b8]">{formatCount(blocks.length)} Blocks</span>
+            {summary && (
+              <>
+                <span className="text-[#00f0ff]">{summary.totalViolations} Violations</span>
+                <span className="text-[#ef4444]">{summary.criticalCount} Critical</span>
+              </>
+            )}
+          </div>
         }
         lastUpdated={lastUpdated}
       />
-      <main className="flex-1 min-h-0 flex gap-2 p-2">
-        <div className="flex-1 min-w-0 flex flex-col gap-1.5 overflow-hidden">
-          <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
-            {ZONE_CATEGORIES.map((zone) => {
-              const zoneBlocks = data.blocks.filter((b) => zone.types.includes(b.blockType));
-              if (zoneBlocks.length === 0) return null;
-              return (
-                <div
-                  key={zone.label}
-                  className="mb-3 p-2 rounded-lg border animate-zone-breathe"
-                  style={{ backgroundColor: `${zone.color}08`, borderColor: `${zone.color}33` }}
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: zone.color }} />
-                    <span className="text-[11px] font-mono font-black uppercase tracking-[0.2em] text-[#94a3b8]">{zone.label}</span>
-                    <span className="text-[8px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-[#0e1321] border border-[#1c273e] text-[#64748b]">{zoneBlocks.length}</span>
-                    <div className="h-px flex-1" style={{ backgroundColor: `${zone.color}33` }} />
-                  </div>
-                  <div className="grid grid-cols-4 gap-2" style={{ gridAutoRows: "1fr" }}>
-                    {zoneBlocks.map((b) => (
-                      <BlockCard key={b.blockId} block={b} />
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+      <main className="flex-1 min-h-0 p-2 overflow-y-auto scrollbar-thin">
+        <div className="max-w-[1920px] mx-auto">
+          {/* Summary ribbon */}
+          {summary && (
+            <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-3 mb-4">
+              <div className="bg-[#090e1c] border border-[#1c273e] rounded-lg p-3">
+                <div className="text-[10px] font-mono text-[#64748b] uppercase tracking-wider">Total Capacity</div>
+                <div className="text-lg font-mono font-black text-[#00f0ff]">{formatCount(summary.totalCapacity)}</div>
+              </div>
+              <div className="bg-[#090e1c] border border-[#1c273e] rounded-lg p-3">
+                <div className="text-[10px] font-mono text-[#64748b] uppercase tracking-wider">Occupied</div>
+                <div className="text-lg font-mono font-black text-white">{formatCount(summary.totalOccupied)}</div>
+              </div>
+              <div className="bg-[#090e1c] border border-[#1c273e] rounded-lg p-3">
+                <div className="text-[10px] font-mono text-[#64748b] uppercase tracking-wider">Fill Ratio</div>
+                <div className="text-lg font-mono font-black text-[#10b981]">{Math.round(summary.overallFillRatio * 100)}%</div>
+              </div>
+              <div className="bg-[#090e1c] border border-[#1c273e] rounded-lg p-3">
+                <div className="text-[10px] font-mono text-[#64748b] uppercase tracking-wider">Reefers</div>
+                <div className="text-lg font-mono font-black text-[#06b6d4]">{summary.reeferCount}</div>
+              </div>
+              <div className="bg-[#090e1c] border border-[#1c273e] rounded-lg p-3">
+                <div className="text-[10px] font-mono text-[#64748b] uppercase tracking-wider">DG Containers</div>
+                <div className="text-lg font-mono font-black text-[#ef4444]">{summary.dgCount}</div>
+              </div>
+              <div className="bg-[#090e1c] border border-[#1c273e] rounded-lg p-3">
+                <div className="text-[10px] font-mono text-[#64748b] uppercase tracking-wider">Violations</div>
+                <div className="text-lg font-mono font-black text-[#f59e0b]">{summary.totalViolations}</div>
+              </div>
+            </div>
+          )}
 
-        <div className="w-[20%] min-w-[220px] max-w-[280px] flex flex-col gap-2 shrink-0">
-          {/* Terminal Utilization */}
-          <div className="rounded-lg border border-[#1c273e] bg-[#0e1321] p-3 flex flex-col items-center gap-2">
-            <div className="text-xs font-mono font-black uppercase tracking-widest text-[#dee2f6]">Terminal Utilization</div>
-            <div className="relative w-24 h-24 mx-auto">
-              <svg viewBox="0 0 100 100" className="w-full h-full">
-                <circle cx="50" cy="50" r="45" fill="none" stroke="#1c273e" strokeWidth="6" />
-                <circle
-                  cx="50" cy="50" r="45" fill="none"
-                  stroke={summary.overallFillRatio > 0.85 ? "#ef4444" : summary.overallFillRatio > 0.7 ? "#f59e0b" : summary.overallFillRatio > 0.5 ? "#10b981" : "#00f0ff"}
-                  strokeWidth="6"
-                  strokeDasharray={`${2 * Math.PI * 45}`}
-                  strokeDashoffset={`${2 * Math.PI * 45 * (1 - summary.overallFillRatio)}`}
-                  strokeLinecap="round"
-                  transform="rotate(-90 50 50)"
-                  className="transition-all duration-700"
-                />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-2xl font-mono font-black tabular-nums" style={{ color: summary.overallFillRatio > 0.85 ? "#ef4444" : summary.overallFillRatio > 0.7 ? "#f59e0b" : summary.overallFillRatio > 0.5 ? "#10b981" : "#00f0ff" }}>
-                  {Math.round(summary.overallFillRatio * 100)}%
-                </span>
-              </div>
-            </div>
-            <div className="flex flex-col items-center gap-0.5 mt-1">
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-lg font-mono font-black text-[#dee2f6] tabular-nums">{summary.totalOccupied.toLocaleString()}</span>
-                <span className="text-xs font-mono font-bold text-[#64748b] opacity-60">/</span>
-                <div className="flex items-baseline gap-0.5">
-                  <span className="text-sm font-mono font-bold text-[#94a3b8] tabular-nums">{summary.totalCapacity.toLocaleString()}</span>
-                  <span className="text-sm font-mono font-bold text-[#94a3b8] uppercase tracking-tight ml-0.5">TEU</span>
-                </div>
-              </div>
-            </div>
-            <div className="w-full h-px bg-[#1c273e] my-1" />
-            <div className="w-full flex flex-col gap-1.5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-[#06b6d4]">
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
-                  <span className="text-xs font-mono font-bold uppercase">Reefers</span>
-                </div>
-                <span className="text-sm font-mono font-black text-[#dee2f6] tabular-nums">{summary.reeferCount}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-[#dc2626]">
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
-                  <span className="text-xs font-mono font-bold uppercase">Dangerous</span>
-                </div>
-                <span className="text-sm font-mono font-black text-[#dee2f6] tabular-nums">{summary.dgCount}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-[#a855f7]">
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  <span className="text-xs font-mono font-bold uppercase">Neglect</span>
-                </div>
-                <span className="text-sm font-mono font-black text-[#dee2f6] tabular-nums">{summary.neglectCount}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Alert Summary */}
-          <div className="rounded-lg border border-[#1c273e] bg-[#0e1321] p-3 flex flex-col gap-2 shrink-0">
-            <div className="text-xs font-mono font-black uppercase tracking-widest text-[#dee2f6] flex items-center gap-1">
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-              <span>Alert Summary</span>
-              <span className="text-[#ef4444] ml-auto">{summary.totalViolations}</span>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              <div className="flex flex-col items-center p-1 rounded bg-[#ef4444]/10 border border-[#ef4444]/20">
-                <span className="text-xs font-black text-[#ef4444]">{summary.criticalCount}</span>
-                <span className="text-[8px] font-mono uppercase text-[#ef4444]">Crit</span>
-              </div>
-              <div className="flex flex-col items-center p-1 rounded bg-[#f97316]/10 border border-[#f97316]/20">
-                <span className="text-xs font-black text-[#f97316]">{summary.highCount}</span>
-                <span className="text-[8px] font-mono uppercase text-[#f97316]">High</span>
-              </div>
-              <div className="flex flex-col items-center p-1 rounded bg-[#eab308]/10 border border-[#eab308]/20">
-                <span className="text-xs font-black text-[#eab308]">{summary.mediumCount}</span>
-                <span className="text-[8px] font-mono uppercase text-[#eab308]">Med</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Priority Alerts */}
-          <div className="flex-1 min-h-0 rounded-lg border border-[#1c273e] bg-[#0e1321] flex flex-col overflow-hidden">
-            <div className="px-3 py-2 border-b border-[#1c273e] flex items-center justify-between shrink-0">
-              <span className="text-xs font-mono font-black uppercase tracking-widest text-[#dee2f6]">Priority Alerts</span>
-            </div>
-            <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar flex flex-col">
-              {data.violations.length === 0 ? (
-                <div className="flex-1 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="text-[#10b981] mb-1">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-8 h-8 mx-auto">
-                        <path d="M9 12l2 2 4-4" strokeLinecap="round" strokeLinejoin="round" />
-                        <circle cx="12" cy="12" r="10" />
-                      </svg>
-                    </div>
-                    <span className="text-xs font-mono uppercase text-[#64748b]">Safe State</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex-1 flex flex-col gap-0">
-                  {data.violations.map((v, idx) => (
-                    <div key={`${v.cntrNo}-${idx}`} className="px-3 py-1.5 border-b border-[#1c273e] hover:bg-[#00f0ff]/5 transition-colors">
-                      <div className="flex items-center justify-between mb-0.5">
-                        <span className="text-sm font-mono font-black text-[#dee2f6]">{v.cntrNo}</span>
-                        <span className="inline-block px-1.5 py-0.5 text-[9px] font-mono font-black uppercase tracking-wider rounded-sm text-white" style={{ backgroundColor: SEVERITY_COLORS[v.severity] }}>{v.type}</span>
+          {/* Zone categories */}
+          {ZONE_CATEGORIES.map((zone) => {
+            const zoneBlocks = blocksByType[zone.types[0]] ?? [];
+            if (zoneBlocks.length === 0) return null;
+            return (
+              <div key={zone.label} className="mb-4">
+                <h3 className="text-xs font-mono font-bold text-[#94a3b8] uppercase tracking-wider mb-2 px-1">
+                  {zone.label} ({zoneBlocks.length})
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-2">
+                  {zoneBlocks.map((b) => {
+                    const pct = Math.round(b.fillRatio * 100);
+                    const color = pct >= 90 ? "#ef4444" : pct >= 70 ? "#f59e0b" : "#10b981";
+                    return (
+                      <div
+                        key={b.blockId}
+                        className="bg-[#0e1321] border border-[#1c273e] rounded-lg p-3 cursor-pointer hover:border-[#00f0ff]/50 transition-colors"
+                        onClick={() => setSelectedBlock(selectedBlock === b.blockId ? null : b.blockId)}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-mono font-bold text-[#dee2f6]">{b.blockId}</span>
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded" style={{ backgroundColor: `${BLOCK_COLORS[b.blockType]}20`, color: BLOCK_COLORS[b.blockType], border: `1px solid ${BLOCK_COLORS[b.blockType]}40` }}>
+                            {b.blockType}
+                          </span>
+                        </div>
+                        <div className="w-full h-1.5 bg-[#1c273e] rounded-full overflow-hidden">
+                          <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
+                        </div>
+                        <div className="flex justify-between text-[10px] font-mono text-[#64748b] mt-1">
+                          <span>{formatCount(b.occupiedTeu)}/{formatCount(b.capacityTeu)}</span>
+                          <span style={{ color }}>{pct}%</span>
+                        </div>
+                        {b.violationCount > 0 && (
+                          <div className="text-[9px] font-mono text-[#ef4444] mt-1">{b.violationCount} violations</div>
+                        )}
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-mono font-bold px-1 py-0 rounded" style={{ backgroundColor: `${SEVERITY_COLORS[v.severity]}20`, color: SEVERITY_COLORS[v.severity] }}>{v.block}</span>
-                        <span className="text-[10px] font-mono text-[#64748b]">{v.description}</span>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
-              )}
+              </div>
+            );
+          })}
+
+          {/* Violations */}
+          {violations.length > 0 && (
+            <div className="mt-4">
+              <h3 className="text-xs font-mono font-bold text-[#ef4444] uppercase tracking-wider mb-2 px-1">
+                Active Violations ({violations.length})
+              </h3>
+              <div className="space-y-1">
+                {violations.slice(0, 10).map((v, i) => (
+                  <div key={i} className="bg-[#0e1321] border border-[#1c273e] rounded px-3 py-2 flex items-center justify-between text-xs font-mono">
+                    <div className="flex items-center gap-3">
+                      <span className={`w-1.5 h-1.5 rounded-full ${
+                        v.severity === "CRITICAL" ? "bg-[#ef4444]" : v.severity === "HIGH" ? "bg-[#f97316]" : v.severity === "MEDIUM" ? "bg-[#eab308]" : "bg-[#64748b]"
+                      }`} />
+                      <span className="text-[#dee2f6]">{v.cntrNo}</span>
+                      <span className="text-[#64748b]">{v.block}</span>
+                      <span className="text-[#94a3b8]">{v.description}</span>
+                    </div>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded" style={{
+                      backgroundColor: `${v.severity === "CRITICAL" ? "#ef4444" : v.severity === "HIGH" ? "#f97316" : "#eab308"}20`,
+                      color: v.severity === "CRITICAL" ? "#ef4444" : v.severity === "HIGH" ? "#f97316" : "#eab308",
+                    }}>
+                      {v.severity}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </main>
     </>

@@ -14,7 +14,7 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
 };
 
 export const BLOCK_COLORS: Record<BlockType, string> = {
-  DG: "#dc2626",
+  DG: "#ef4444",
   RF: "#06b6d4",
   EMPTY: "#64748b",
   IMP_EXP: "#10b981",
@@ -23,7 +23,7 @@ export const BLOCK_COLORS: Record<BlockType, string> = {
   CFS: "#8b5cf6",
   INSP: "#06b6d4",
   NEGLECT: "#a855f7",
-  OTHER: "rgba(255,255,255,0.1)",
+  OTHER: "#475569",
 };
 
 export const SEVERITY_COLORS: Record<Severity, string> = {
