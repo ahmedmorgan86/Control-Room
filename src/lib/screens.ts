@@ -1,17 +1,17 @@
 import type { MonitorKind, ScreenKey, User } from "@/lib/types";
 
 export const SCREEN_LABELS: Record<ScreenKey, string> = {
-  ACT_VSL_MONITOR: "Vessel Monitor",
-  DCT_VSL_MONITOR: "Vessel Monitor",
-  ACT_EQU_MONITOR: "Equipment Fleet",
-  DCT_EQU_MONITOR: "Equipment Fleet",
-  ACT_YARD_MONITOR: "Yard Monitor",
-  DCT_YARD_MONITOR: "Yard Monitor",
-  ACT_YT_TRACKER: "YT Tracker",
-  DCT_YT_TRACKER: "YT Tracker",
-  GATE_MONITOR: "Gate Monitor",
-  YARD_MONITOR: "Yard Monitor",
-  BERTH_MONITOR: "Berth Monitor",
+  ACT_VSL_MONITOR: "VESSEL MONITOR",
+  DCT_VSL_MONITOR: "VESSEL MONITOR",
+  ACT_EQU_MONITOR: "EQU MONITOR",
+  DCT_EQU_MONITOR: "EQU MONITOR",
+  ACT_YARD_MONITOR: "YARD MONITOR",
+  DCT_YARD_MONITOR: "YARD MONITOR",
+  ACT_YT_TRACKER: "YT TRACKER",
+  DCT_YT_TRACKER: "YT TRACKER",
+  GATE_MONITOR: "GATE MONITOR",
+  YARD_MONITOR: "YARD MONITOR",
+  BERTH_MONITOR: "BERTH MONITOR",
 };
 
 export function screenKind(key: ScreenKey): MonitorKind {

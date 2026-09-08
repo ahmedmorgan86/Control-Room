@@ -1,19 +1,10 @@
 "use client";
 
 import { useMemo } from "react";
-import type { Vessel, YardData, EquipmentData } from "@/lib/types";
+import type { Vessel, Crane } from "@/lib/types";
 import { usePolling } from "@/lib/usePolling";
-import { formatArrival } from "@/lib/ui";
+import { formatArrival, formatCount } from "@/lib/ui";
 import { MonitorHeader } from "@/components/MonitorHeader";
-import { MetricCards } from "@/components/MetricCards";
-import { VesselVisualization } from "@/components/VesselVisualization";
-import { CraneHUDOverlay } from "@/components/CraneHUDOverlay";
-import { BottomTicker } from "@/components/BottomTicker";
-import { YTFleetPanel, YardBlockPanel, GangDispatchPanel } from "@/components/BottomPanels";
-
-function compareCranes(a: { layoutRank: number; craneId: string }, b: { layoutRank: number; craneId: string }) {
-  return a.layoutRank - b.layoutRank || a.craneId.localeCompare(b.craneId);
-}
 
 const CRANE_COLORS: Record<string, string> = {
   QC01: "#10b981", QC02: "#10b981", QC03: "#10b981", QC04: "#10b981",
@@ -22,61 +13,138 @@ const CRANE_COLORS: Record<string, string> = {
   QC13: "#ef4444", QC14: "#ef4444", QC15: "#ef4444", QC16: "#ef4444",
 };
 
-function CraneTable({ cranes, duplicateIds }: { cranes: Vessel["cranes"]; duplicateIds: Set<string> }) {
+function compareCranes(a: { layoutRank: number; craneId: string }, b: { layoutRank: number; craneId: string }) {
+  return a.layoutRank - b.layoutRank || a.craneId.localeCompare(b.craneId);
+}
+
+function ShipSVG({ vesselName, cranes }: { vesselName: string; cranes: Crane[] }) {
+  const activeCranes = useMemo(
+    () => cranes.filter((c) => c.movesDone < c.movesTotal).sort(compareCranes),
+    [cranes],
+  );
+
+  return (
+    <div className="relative w-full h-full bg-[#060a14] rounded-lg overflow-hidden flex items-center justify-center">
+      <svg viewBox="0 0 800 300" className="w-full h-auto max-h-full" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <linearGradient id={`hull-${vesselName}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#1e293b" />
+            <stop offset="100%" stopColor="#0f172a" />
+          </linearGradient>
+          <linearGradient id={`crane-${vesselName}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#facc15" />
+            <stop offset="100%" stopColor="#ca8a04" />
+          </linearGradient>
+        </defs>
+
+        {/* Water */}
+        <rect fill="#0c4a6e" opacity="0.15" width="800" height="50" y="260" />
+
+        {/* Berth line */}
+        <line stroke="#facc15" strokeDasharray="8 4" strokeWidth="2" x1="0" x2="800" y1="250" y2="250" />
+
+        {/* Ship hull */}
+        <path
+          d="M 80,245 L 700,245 C 720,245 740,235 745,220 L 740,200 L 100,200 C 85,200 80,210 80,220 Z"
+          fill={`url(#hull-${vesselName})`}
+          stroke="#334155"
+          strokeWidth="1.5"
+        />
+        {/* Red antifouling */}
+        <path d="M 80,245 L 740,245 L 735,260 L 85,260 Z" fill="#991b1b" opacity="0.8" />
+        <line stroke="#ef4444" strokeWidth="1.5" x1="80" x2="740" y1="245" y2="245" />
+
+        {/* Superstructure */}
+        <rect fill="#f8fafc" height="60" rx="2" stroke="#94a3b8" strokeWidth="1" width="60" x="660" y="140" />
+        <rect fill="#0284c7" height="8" opacity="0.8" rx="1" width="55" x="663" y="145" />
+        <rect fill="#0f172a" height="30" rx="2" stroke="#334155" strokeWidth="1" width="20" x="685" y="110" />
+
+        {/* Container stacks (simple) */}
+        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((bay) => {
+          const x = 140 + bay * 45;
+          const tiers = 2 + (bay % 3);
+          const colors = ["#0284c7", "#1d4ed8", "#ea580c", "#059669", "#06b6d4"];
+          return Array.from({ length: tiers }).map((_, t) => (
+            <rect
+              key={`${bay}-${t}`}
+              fill={colors[(bay + t) % colors.length]}
+              height="10"
+              width="35"
+              x={x}
+              y={200 - t * 10}
+              stroke="#090e1c"
+              strokeWidth="0.5"
+            />
+          ));
+        })}
+
+        {/* Vessel name */}
+        <text x="400" y="130" textAnchor="middle" fontSize="16" fontFamily="Inter, sans-serif" fill="#dee2f6" fontWeight="700" letterSpacing="2">
+          {vesselName}
+        </text>
+
+        {/* Cranes */}
+        {activeCranes.slice(0, 4).map((crane, idx) => {
+          const x = 200 + idx * 140;
+          const color = CRANE_COLORS[crane.craneId] ?? "#00f0ff";
+          return (
+            <g key={crane.craneId}>
+              {/* Portal legs */}
+              <path d={`M ${x - 12},260 L ${x - 6},140 L ${x + 6},140 L ${x + 12},260`} fill={`url(#crane-${vesselName})`} stroke="#854d0e" strokeWidth="1" />
+              <path d={`M ${x + 28},260 L ${x + 34},140 L ${x + 46},140`} fill={`url(#crane-${vesselName})`} stroke="#854d0e" strokeWidth="1" />
+              {/* Boom */}
+              <line stroke="#facc15" strokeWidth="4" x1={x - 30} x2={x + 50} y1="140" y2="140" />
+              {/* Crane label */}
+              <text x={x + 10} y="125" textAnchor="middle" fontSize="9" fontFamily="JetBrains Mono, monospace" fill={color} fontWeight="bold">
+                {crane.craneId}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
+function CraneTable({ cranes }: { cranes: Crane[] }) {
   const sorted = useMemo(() => [...cranes].sort(compareCranes), [cranes]);
 
   return (
     <div className="bg-[#0e1321] border-t border-[#1c273e]">
-      <table className="w-full text-sm">
+      <table className="w-full text-xs font-mono">
         <thead>
-          <tr className="text-[#64748b] text-[11px] uppercase tracking-wider text-left border-b border-[#1c273e]">
-            <th className="px-3 py-2 font-semibold">Crane</th>
-            <th className="px-3 py-2 font-semibold">Progress</th>
-            <th className="px-3 py-2 font-semibold text-right">Load</th>
-            <th className="px-3 py-2 font-semibold text-right">Disch</th>
-            <th className="px-3 py-2 font-semibold text-right">MPH</th>
+          <tr className="text-[#64748b] text-[10px] uppercase tracking-wider text-left border-b border-[#1c273e]">
+            <th className="px-3 py-1.5 font-semibold">Crane</th>
+            <th className="px-3 py-1.5 font-semibold">Progress</th>
+            <th className="px-3 py-1.5 font-semibold text-right">Load</th>
+            <th className="px-3 py-1.5 font-semibold text-right">Disch</th>
+            <th className="px-3 py-1.5 font-semibold text-right">MPH</th>
           </tr>
         </thead>
         <tbody>
           {sorted.map((c) => {
-            const conflict = duplicateIds.has(c.craneId);
-            const done = c.movesDone >= c.movesTotal;
             const color = CRANE_COLORS[c.craneId] ?? "#00f0ff";
             const pct = c.movesTotal > 0 ? Math.round((c.movesDone / c.movesTotal) * 100) : 0;
+            const done = c.movesDone >= c.movesTotal;
 
             return (
-              <tr
-                key={c.craneId}
-                className={`border-b border-[#1c273e] hover:bg-[#141c2e] transition-colors ${done ? "opacity-50" : ""} ${conflict ? "bg-[#ef4444]/10" : ""}`}
-              >
-                <td className="px-3 py-2">
-                  <span className="font-mono font-bold" style={{ color: conflict ? "#ef4444" : color }}>
-                    {c.craneId}
-                  </span>
-                  {conflict && (
-                    <span className="inline-flex items-center px-1.5 py-0.5 text-[9px] bg-[#ef4444] text-white rounded font-black animate-pulse ml-2">
-                      CONFLICT
-                    </span>
-                  )}
-                  {done && !conflict && (
-                    <span className="inline-flex items-center px-1.5 py-0.5 text-[9px] bg-[#10b981] text-white rounded font-black ml-2">
-                      DONE
-                    </span>
-                  )}
+              <tr key={c.craneId} className={`border-b border-[#1c273e] ${done ? "opacity-50" : ""}`}>
+                <td className="px-3 py-1.5">
+                  <span className="font-bold" style={{ color }}>{c.craneId}</span>
                 </td>
-                <td className="px-3 py-2">
+                <td className="px-3 py-1.5">
                   <div className="flex items-center gap-2">
-                    <div className="w-14 h-1.5 bg-[#1c273e] rounded-full overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: color }} />
+                    <div className="w-12 h-1 bg-[#1c273e] rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
                     </div>
-                    <span className="text-[#94a3b8] tabular-nums whitespace-nowrap text-xs">{c.movesDone}/{c.movesTotal}</span>
-                    <span className="font-mono font-bold tabular-nums text-xs" style={{ color }}>{pct}%</span>
+                    <span className="text-[#94a3b8] tabular-nums whitespace-nowrap">{c.movesDone}/{c.movesTotal}</span>
+                    <span className="font-bold tabular-nums" style={{ color }}>{pct}%</span>
                   </div>
                 </td>
-                <td className="px-3 py-2 text-right tabular-nums text-xs">{c.loadingDone}<span className="text-[#64748b]">/{c.loadingTotal}</span></td>
-                <td className="px-3 py-2 text-right tabular-nums text-xs">{c.dischargingDone}<span className="text-[#64748b]">/{c.dischargingTotal}</span></td>
-                <td className="px-3 py-2 text-right">
-                  <span className="tabular-nums font-bold text-xs" style={{
+                <td className="px-3 py-1.5 text-right tabular-nums">{c.loadingDone}<span className="text-[#64748b]">/{c.loadingTotal}</span></td>
+                <td className="px-3 py-1.5 text-right tabular-nums">{c.dischargingDone}<span className="text-[#64748b]">/{c.dischargingTotal}</span></td>
+                <td className="px-3 py-1.5 text-right">
+                  <span className="tabular-nums font-bold" style={{
                     color: c.mph >= 25 ? "#10b981" : c.mph >= 15 ? color : c.mph > 0 ? "#f59e0b" : "#64748b"
                   }}>
                     {c.mph}
@@ -92,108 +160,89 @@ function CraneTable({ cranes, duplicateIds }: { cranes: Vessel["cranes"]; duplic
 }
 
 function VesselCard({ vessel }: { vessel: Vessel }) {
-  const duplicateIds = useMemo(() => {
-    const counts = new Map<string, number>();
-    vessel.cranes.forEach((c) => counts.set(c.craneId, (counts.get(c.craneId) ?? 0) + 1));
-    return new Set([...counts].filter(([, n]) => n > 1).map(([id]) => id));
-  }, [vessel.cranes]);
-
-  const activeCranes = useMemo(
-    () => vessel.cranes.filter((c) => c.movesDone < c.movesTotal).sort(compareCranes),
-    [vessel.cranes],
-  );
-
-  const totalDone = vessel.totalDone;
-  const totalMoves = vessel.totalMoves;
-  const overallPct = totalMoves > 0 ? Math.min(100, Math.round((totalDone / totalMoves) * 100)) : 0;
+  const overallPct = vessel.totalMoves > 0 ? Math.min(100, Math.round((vessel.totalDone / vessel.totalMoves) * 100)) : 0;
 
   return (
-    <div className="flex flex-col h-full bg-[#0e1321] border border-[#1c273e] rounded-xl overflow-hidden shadow-lg">
+    <div className="flex flex-col h-full bg-[#0e1321] border border-[#1c273e] rounded-xl overflow-hidden">
       {/* Header */}
-      <div className="bg-[#141c2e] border-b border-[#1c273e] px-4 py-3">
-        <div className="flex items-start justify-between">
+      <div className="bg-[#141c2e] border-b border-[#1c273e] px-4 py-2.5">
+        <div className="flex items-center justify-between">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="w-3 h-3 rounded-full bg-[#10b981] animate-pulse" />
-              <span className="text-lg font-extrabold text-[#dee2f6] uppercase tracking-wide truncate">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#10b981] animate-pulse" />
+              <span className="text-base font-extrabold text-[#dee2f6] uppercase tracking-wide truncate">
                 {vessel.vesselName}
               </span>
             </div>
-            <div className="flex items-center gap-2 mt-1 text-xs font-mono text-[#94a3b8]">
+            <div className="flex items-center gap-3 mt-0.5 text-[10px] font-mono text-[#94a3b8]">
               <span>VOY {vessel.voyageNumber}</span>
-              <span className="text-[#1c273e]">│</span>
+              <span className="text-[#1c273e]">|</span>
               <span>ARR {formatArrival(vessel.arrivalTime)}</span>
-              <span className="text-[#1c273e]">│</span>
-              <span>QC {vessel.cranes.length}</span>
+              <span className="text-[#1c273e]">|</span>
+              <span className="text-[#f59e0b] font-bold">QC {vessel.cranes.length}</span>
             </div>
           </div>
-          <div className="w-16 aspect-square bg-[#060a14] rounded-lg flex flex-col items-center justify-center shrink-0 ml-3 border border-[#1c273e]">
-            <span className="text-[8px] font-mono font-bold uppercase tracking-wider text-[#64748b]">GMPH</span>
-            <span className="text-xl font-mono font-black text-[#00f0ff] leading-none tabular-nums">{vessel.gmph}</span>
+          <div className="w-14 h-14 bg-[#060a14] rounded-lg flex flex-col items-center justify-center shrink-0 ml-2 border border-[#1c273e]">
+            <span className="text-[7px] font-mono font-bold uppercase tracking-wider text-[#64748b]">GMPH</span>
+            <span className="text-lg font-mono font-black text-[#00f0ff] leading-none tabular-nums">{vessel.gmph}</span>
           </div>
         </div>
-        <div className="mt-2">
-          <div className="flex items-center justify-between text-[10px] font-mono text-[#94a3b8] mb-1">
-            <span className="uppercase tracking-wider">Overall Progress</span>
-            <span className="font-bold tabular-nums">{totalDone}/{totalMoves} — {overallPct}%</span>
+
+        {/* Stats row */}
+        <div className="flex items-center gap-4 mt-2 text-[11px] font-mono">
+          <div className="flex items-center gap-1.5">
+            <svg className="w-3 h-3 text-[#10b981]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+            </svg>
+            <span className="text-[#64748b]">LOAD</span>
+            <span className="font-bold text-[#10b981]">{formatCount(vessel.loadingDone)}</span>
+            <span className="text-[#64748b]">/ {formatCount(vessel.loadingTotal)}</span>
           </div>
-          <div className="relative h-2.5 w-full rounded-full overflow-hidden bg-[#1c273e]">
+          <div className="flex items-center gap-1.5">
+            <svg className="w-3 h-3 text-[#f59e0b]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+            </svg>
+            <span className="text-[#64748b]">DISCH</span>
+            <span className="font-bold text-[#f59e0b]">{formatCount(vessel.dischargingDone)}</span>
+            <span className="text-[#64748b]">/ {formatCount(vessel.dischargingTotal)}</span>
+          </div>
+          <div className="flex items-center gap-1.5 ml-auto">
+            <span className="text-[#64748b]">TOTAL</span>
+            <span className="font-bold text-white">{formatCount(vessel.totalDone)}</span>
+            <span className="text-[#64748b]">/ {formatCount(vessel.totalMoves)}</span>
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        <div className="mt-2">
+          <div className="relative h-2 w-full rounded-full overflow-hidden bg-[#1c273e]">
             <div
               className="absolute inset-y-0 left-0 bg-linear-to-r from-[#00f0ff] to-[#0284c7] rounded-full transition-all duration-700"
               style={{ width: `${overallPct}%` }}
             />
-            {overallPct > 15 && (
-              <span className="absolute inset-0 flex items-center justify-center text-[9px] font-mono font-bold text-white drop-shadow-sm">
-                {overallPct}%
-              </span>
-            )}
+          </div>
+          <div className="flex justify-between text-[9px] font-mono text-[#64748b] mt-0.5">
+            <span>PROGRESS</span>
+            <span className="font-bold text-[#00f0ff]">{overallPct}%</span>
           </div>
         </div>
       </div>
 
-      {/* Crane HUD Overlays */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 px-3 pt-3">
-        {activeCranes.slice(0, 4).map((crane) => (
-          <CraneHUDOverlay key={crane.craneId} crane={crane} />
-        ))}
-      </div>
-
-      {/* Vessel Visualization */}
-      <div className="flex-1 min-h-0 relative" style={{ minHeight: "200px" }}>
-        <VesselVisualization cranes={vessel.cranes} vesselName={vessel.vesselName} duplicateCraneIds={duplicateIds} />
-      </div>
-
-      {/* Dock apron status */}
-      <div className="bg-[#0e1321] border-t border-[#1c273e] px-3 py-2 flex flex-wrap items-center justify-between font-mono text-[10px] text-[#94a3b8]">
-        <div className="flex items-center gap-4">
-          <span className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />
-            Mooring Tension: <strong className="text-white">16/16 Taut</strong>
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#00f0ff]" />
-            UKC: <strong className="text-[#00f0ff]">+3.2m</strong>
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />
-            Shore Power: <strong className="text-[#10b981]">Active</strong>
-          </span>
-        </div>
+      {/* Ship visualization */}
+      <div className="flex-1 min-h-0" style={{ minHeight: "160px" }}>
+        <ShipSVG vesselName={vessel.vesselName} cranes={vessel.cranes} />
       </div>
 
       {/* Crane Table */}
-      <CraneTable cranes={vessel.cranes} duplicateIds={duplicateIds} />
+      <CraneTable cranes={vessel.cranes} />
     </div>
   );
 }
 
 export function VesselMonitor({ terminalCode }: { terminalCode: string }) {
   const { data: vessels, loading, error, lastUpdated } = usePolling<Vessel[]>(`/api/vessels?terminal=${terminalCode}`, 60000);
-  const { data: yardData } = usePolling<YardData>(`/api/yard?terminal=${terminalCode}`, 60000);
-  const { data: equData } = usePolling<EquipmentData>(`/api/equipment?terminal=${terminalCode}`, 60000);
 
   const vesselCount = vessels?.length ?? 0;
-  const ytCards = equData?.yardSections?.find((s) => s.equType === "YT")?.cards ?? [];
 
   if (loading && !vessels) {
     return (
@@ -235,47 +284,29 @@ export function VesselMonitor({ terminalCode }: { terminalCode: string }) {
         lastUpdated={lastUpdated}
       />
 
-      {vessels && vessels.length > 0 && <MetricCards vessels={vessels} />}
-
-      <main className="flex-1 min-h-0 p-2">
-        {!vessels || vessels.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-[#64748b]">
-            <div className="border border-[#1c273e] px-12 py-8 text-center rounded-xl">
-              <div className="text-xs font-bold font-mono uppercase tracking-widest mb-2">No Vessel Data</div>
-              <p className="text-[11px] font-mono text-[#64748b]">Waiting for GC order data.</p>
-            </div>
-          </div>
-        ) : (
-          <div className="flex justify-center gap-2 h-full">
-            {vessels.slice(0, 3).map((v) => (
-              <div
-                key={`${v.vesselCode}_${v.callYear}_${v.callSeq}`}
-                className="h-full flex-shrink-0"
-                style={{ width: "calc((100% - 16px) / 3)" }}
-              >
-                <VesselCard vessel={v} />
+      <main className="flex-1 min-h-0 p-3 overflow-hidden flex items-center justify-center">
+        <div className="w-full max-w-[1800px] h-full flex items-center justify-center">
+          {!vessels || vessels.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-[#64748b]">
+              <div className="border border-[#1c273e] px-12 py-8 text-center rounded-xl">
+                <div className="text-xs font-bold font-mono uppercase tracking-widest mb-2">No Vessel Data</div>
+                <p className="text-[11px] font-mono text-[#64748b]">Waiting for GC order data.</p>
               </div>
-            ))}
-          </div>
-        )}
-      </main>
-
-      {/* Bottom Panels */}
-      <div className="max-w-[1920px] mx-auto px-6 py-2">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          <div className="bg-[#0e1321] border border-[#1c273e]/80 rounded-xl p-4 shadow-xl">
-            <YTFleetPanel yts={ytCards} />
-          </div>
-          <div className="bg-[#0e1321] border border-[#1c273e]/80 rounded-xl p-4 shadow-xl">
-            <YardBlockPanel blocks={yardData?.blocks ?? []} violations={yardData?.violations ?? []} />
-          </div>
-          <div className="bg-[#0e1321] border border-[#1c273e]/80 rounded-xl p-4 shadow-xl">
-            <GangDispatchPanel yts={ytCards} />
-          </div>
+            </div>
+          ) : (
+            <div className="grid grid-flow-col auto-cols-fr gap-4 w-full h-full items-center justify-center">
+              {vessels.map((v) => (
+                <div
+                  key={`${v.vesselCode}_${v.callYear}_${v.callSeq}`}
+                  className="h-full max-h-[calc(100vh-130px)] flex flex-col"
+                >
+                  <VesselCard vessel={v} />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      </div>
-
-      <BottomTicker vessels={vessels ?? []} />
+      </main>
     </>
   );
 }
