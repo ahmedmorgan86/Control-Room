@@ -32,7 +32,10 @@ export function Topbar({ activeScreen, onNavigate }: { activeScreen: ScreenKey |
     <header className="relative z-50 flex h-14 shrink-0 items-center justify-between border-b border-white/[0.1] bg-[rgba(5,8,13,0.96)] px-5 shadow-depth-2">
       <div className="flex min-w-0 items-center gap-4">
         <div className="flex items-center gap-3 border-r border-white/[0.1] pr-5">
-          <div className="flex size-8 items-center justify-center rounded-md border border-[var(--cyan)]/30 bg-[var(--cyan)]/10 text-[var(--cyan)] font-mono text-sm font-bold">CR</div>
+          <picture className="flex h-9 w-14 items-center justify-center overflow-hidden rounded-md border border-white/[0.12] bg-white">
+            <source media="(prefers-color-scheme: light)" srcSet="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/logo1-Lrzvmwbf0y3CtFgi543jTv9PJ9p5g7.png" />
+            <img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/logo1_darkmode-H8f4fG42wi2edfPaWDD1o6VzjiouzW.png" alt="Port Smart-Ops logo" className="h-full w-full object-contain" />
+          </picture>
           <div className="leading-none"><div className="text-[11px] font-bold tracking-[0.2em] text-[var(--text-bright)]">CONTROL ROOM</div><div className="mt-1 text-[8px] font-mono tracking-[0.16em] text-[var(--text-dim)]">PORT SMART-OPS / LIVE</div></div>
         </div>
         {user && <div className="flex items-center gap-2 text-[9px] font-mono uppercase tracking-[0.16em] text-[var(--text-secondary)]"><span className="status-dot size-1.5 rounded-full bg-[var(--green)]" />{activeTerm} TERMINAL</div>}
