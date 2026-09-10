@@ -15,7 +15,6 @@ export function Topbar({
   const { user, login, logout } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [showPass, setShowPass] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [clock, setClock] = useState(() => new Date());
@@ -53,25 +52,30 @@ export function Topbar({
     setSubmitting(true);
     const err = await login(username, password);
     if (err) setLoginError(err);
-    else { setUsername(""); setPassword(""); setShowPass(false); }
+    else { setUsername(""); setPassword(""); }
     setSubmitting(false);
   };
 
   if (user) {
     return (
-      <header className="w-full bg-[#0f172a] border-b border-[#1e293b] px-5 py-2 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-4">
+      <header className="w-full h-12 bg-[rgba(10,15,28,0.9)] backdrop-blur-xl border-b border-white/[0.06] px-4 flex items-center justify-between shrink-0 z-50 relative">
+        {/* Left: Logo + Terminal badge */}
+        <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <img src="/logo/full-dark.png" alt="Terminal Logo" className="h-12 object-contain" />
+            <img src="/logo/full-dark.png" alt="Logo" className="h-8 object-contain" />
           </div>
           {terminals.length > 0 && (
-            <span className="text-[11px] px-2.5 py-0.5 rounded font-bold tracking-wider bg-[#1e293b] text-white border border-[#334155]">
-              {activeTerm}
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--green)] animate-pulse" />
+              <span className="text-[10px] font-mono font-bold tracking-widest text-[var(--text-secondary)] bg-white/[0.04] px-2 py-0.5 rounded border border-white/[0.06]">
+                {activeTerm}
+              </span>
+            </div>
           )}
         </div>
 
-        <nav className="flex items-center gap-1">
+        {/* Center: Nav tabs */}
+        <nav className="absolute left-1/2 -translate-x-1/2 flex items-center gap-0.5 bg-white/[0.03] rounded-lg p-0.5 border border-white/[0.04]">
           {filteredScreens.map((key) => {
             const isActive = activeScreen === key;
             const label = SCREEN_LABELS[key] ?? key;
@@ -79,10 +83,10 @@ export function Topbar({
               <button
                 key={key}
                 onClick={() => onNavigate(key)}
-                className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${
+                className={`px-3 py-1 rounded-md text-[11px] font-semibold tracking-wide transition-all duration-200 ${
                   isActive
-                    ? "bg-[#1e293b] text-white border border-[#334155]"
-                    : "text-[#64748b] hover:text-[#94a3b8] hover:bg-[#1e293b]/50"
+                    ? "bg-white/[0.08] text-[var(--text-bright)] shadow-sm"
+                    : "text-[var(--text-dim)] hover:text-[var(--text-secondary)] hover:bg-white/[0.04]"
                 }`}
               >
                 {label}
@@ -91,19 +95,24 @@ export function Topbar({
           })}
         </nav>
 
+        {/* Right: Clock + User + Logout */}
         <div className="flex items-center gap-4">
-          <div className="text-right font-mono">
-            <div className="text-sm font-black text-white tabular-nums leading-tight">{timeStr}</div>
-            <div className="text-[9px] text-[#64748b] uppercase tracking-wider">{dateStr}</div>
+          <div className="text-right font-mono leading-none">
+            <div className="text-sm font-bold text-[var(--text-bright)] tabular-nums">{timeStr}</div>
+            <div className="text-[8px] text-[var(--text-dim)] tracking-widest mt-0.5">{dateStr}</div>
           </div>
-          <div className="flex items-center gap-1.5 text-[#94a3b8] border-l border-[#1e293b] pl-4">
-            <span className="text-xs font-semibold">{user.full_name}</span>
+          <div className="w-px h-5 bg-white/[0.08]" />
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[var(--cyan)] to-[var(--blue)] flex items-center justify-center text-[9px] font-bold text-white">
+              {user.full_name?.charAt(0) ?? "U"}
+            </div>
+            <span className="text-[11px] font-medium text-[var(--text-secondary)]">{user.full_name}</span>
           </div>
           <button
             onClick={logout}
-            className="text-[10px] font-bold uppercase tracking-wider text-[#ef4444] border border-[#ef4444]/50 px-3 py-1 rounded hover:bg-[#ef4444]/10 transition-colors"
+            className="text-[9px] font-bold uppercase tracking-[0.15em] text-[var(--red)] border border-[var(--red)]/20 px-2.5 py-1 rounded hover:bg-[var(--red)]/10 transition-all duration-200"
           >
-            Logout
+            EXIT
           </button>
         </div>
       </header>
@@ -111,35 +120,38 @@ export function Topbar({
   }
 
   return (
-    <header className="w-full bg-[#0f172a] border-b border-[#1e293b] px-5 py-2 flex items-center justify-between shrink-0">
+    <header className="w-full h-12 bg-[rgba(10,15,28,0.9)] backdrop-blur-xl border-b border-white/[0.06] px-4 flex items-center justify-between shrink-0 z-50">
       <div className="flex items-center gap-2">
-        <img src="/logo/full-dark.png" alt="Terminal Logo" className="h-12 object-contain" />
+        <img src="/logo/full-dark.png" alt="Logo" className="h-8 object-contain" />
       </div>
 
-      <div className="flex items-center gap-4 font-mono">
-        <div className="text-right">
-          <div className="text-sm font-black text-white tabular-nums leading-tight">{timeStr}</div>
-          <div className="text-[9px] text-[#64748b] uppercase tracking-wider">{dateStr}</div>
+      <div className="flex items-center gap-4">
+        <div className="text-right font-mono leading-none">
+          <div className="text-sm font-bold text-[var(--text-bright)] tabular-nums">{timeStr}</div>
+          <div className="text-[8px] text-[var(--text-dim)] tracking-widest mt-0.5">{dateStr}</div>
         </div>
-        <form onSubmit={handleLogin} className="flex items-center gap-2 border-l border-[#1e293b] pl-4">
-          {loginError && <span className="text-[10px] text-[#ef4444]">{loginError}</span>}
+        <div className="w-px h-5 bg-white/[0.08]" />
+        <form onSubmit={handleLogin} className="flex items-center gap-2">
+          {loginError && (
+            <span className="text-[10px] font-mono text-[var(--red)] max-w-[120px] truncate">{loginError}</span>
+          )}
           <input
-            type="text" placeholder="Username" value={username}
+            type="text" placeholder="user" value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="h-7 px-2.5 text-xs bg-[#1e293b] border border-[#334155] text-[#f1f5f9] placeholder-[#64748b] focus:outline-none focus:border-[#3b82f6] rounded w-28"
+            className="h-7 px-2.5 text-[11px] font-mono bg-white/[0.04] border border-white/[0.08] text-[var(--text-bright)] placeholder-[var(--text-dim)] focus:outline-none focus:border-[var(--cyan)]/40 rounded w-24 transition-colors"
             autoComplete="username" disabled={submitting}
           />
           <input
-            type={showPass ? "text" : "password"} placeholder="Password" value={password}
+            type="password" placeholder="pass" value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="h-7 px-2.5 text-xs bg-[#1e293b] border border-[#334155] text-[#f1f5f9] placeholder-[#64748b] focus:outline-none focus:border-[#3b82f6] rounded w-28"
+            className="h-7 px-2.5 text-[11px] font-mono bg-white/[0.04] border border-white/[0.08] text-[var(--text-bright)] placeholder-[var(--text-dim)] focus:outline-none focus:border-[var(--cyan)]/40 rounded w-24 transition-colors"
             autoComplete="current-password" disabled={submitting}
           />
           <button
             type="submit" disabled={submitting || !username || !password}
-            className="h-7 px-3 text-xs font-bold uppercase tracking-wider text-white bg-[#3b82f6] hover:bg-[#2563eb] disabled:opacity-40 transition-colors rounded"
+            className="h-7 px-3 text-[10px] font-bold uppercase tracking-widest text-white bg-gradient-to-r from-[var(--cyan)] to-[var(--blue)] hover:opacity-90 disabled:opacity-30 transition-all rounded"
           >
-            {submitting ? "..." : "Login"}
+            {submitting ? "\u2026" : "GO"}
           </button>
         </form>
       </div>

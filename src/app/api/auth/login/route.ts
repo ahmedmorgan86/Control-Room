@@ -35,7 +35,19 @@ export async function POST(req: NextRequest) {
       };
     }
   } catch {
-    user = null;
+    // Backend unreachable — allow local login with default screens
+    user = {
+      username,
+      full_name: username,
+      screens: {
+        ACT_VSL_MONITOR: true,
+        DCT_VSL_MONITOR: true,
+        ACT_EQU_MONITOR: true,
+        DCT_EQU_MONITOR: true,
+        ACT_YARD_MONITOR: true,
+        DCT_YARD_MONITOR: true,
+      },
+    };
   }
 
   if (!user) {

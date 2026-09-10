@@ -34,9 +34,11 @@ export function sortScreens(keys: ScreenKey[]): ScreenKey[] {
 
 export function getUserScreens(user: User | null): ScreenKey[] {
   if (!user) return [];
-  return sortScreens(
+  const enabled = sortScreens(
     (Object.entries(user.screens) as [ScreenKey, boolean][])
       .filter(([, v]) => v)
       .map(([k]) => k),
   );
+  if (enabled.length > 0) return enabled;
+  return sortScreens(["ACT_VSL_MONITOR", "ACT_EQU_MONITOR", "ACT_YARD_MONITOR"]);
 }
