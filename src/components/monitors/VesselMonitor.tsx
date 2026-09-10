@@ -1,35 +1,15 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import type { Vessel, Crane } from "@/lib/types";
 import { usePolling } from "@/lib/usePolling";
 import { formatArrival, formatCount } from "@/lib/ui";
+import { useMouseTilt } from "@/lib/useMouseTilt";
+import { QC_COLORS } from "@/lib/qcColors";
 import { MonitorHeader } from "@/components/MonitorHeader";
-
-const QC_COLORS: Record<string, string> = {
-  QC01: "#10b981", QC02: "#10b981", QC03: "#10b981", QC04: "#10b981",
-  QC05: "#10b981", QC06: "#10b981", QC07: "#10b981", QC08: "#10b981",
-  QC09: "#f59e0b", QC10: "#f59e0b", QC11: "#f59e0b", QC12: "#f59e0b",
-  QC13: "#ef4444", QC14: "#ef4444", QC15: "#ef4444", QC16: "#ef4444",
-};
 
 function compareCranes(a: { layoutRank: number; craneId: string }, b: { layoutRank: number; craneId: string }) {
   return a.layoutRank - b.layoutRank || a.craneId.localeCompare(b.craneId);
-}
-
-function useMouseTilt(intensity = 6) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [style, setStyle] = useState<React.CSSProperties>({});
-  const onMove = useCallback((e: React.MouseEvent) => {
-    const el = ref.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    const x = (e.clientX - r.left) / r.width - 0.5;
-    const y = (e.clientY - r.top) / r.height - 0.5;
-    setStyle({ transform: `perspective(700px) rotateX(${-y * intensity}deg) rotateY(${x * intensity}deg) translateZ(8px)` });
-  }, [intensity]);
-  const onLeave = useCallback(() => setStyle({ transform: "perspective(700px) rotateX(0) rotateY(0) translateZ(0)" }), []);
-  return { ref, style, onMove, onLeave };
 }
 
 function ShipSVG({ vesselName, cranes }: { vesselName: string; cranes: Crane[] }) {
@@ -63,7 +43,7 @@ function ShipSVG({ vesselName, cranes }: { vesselName: string; cranes: Crane[] }
             <rect key={`${bay}-${t}`} fill={cols[(bay+t)%cols.length]} height="9" width="38" x={x} y={200 - t * 9} stroke="rgba(0,0,0,0.4)" strokeWidth="0.5" rx="1" />
           ));
         })}
-        <text x="400" y="135" textAnchor="middle" fontSize="15" fontFamily="Space Grotesk, sans-serif" fill="#e2e8f0" fontWeight="600" letterSpacing="3">
+        <text x="400" y="135" textAnchor="middle" fontSize="15" fontFamily="Inter, sans-serif" fill="#e2e8f0" fontWeight="600" letterSpacing="3">
           {vesselName}
         </text>
         {active.slice(0,4).map((crane, idx) => {
@@ -164,13 +144,13 @@ function VesselCard({ vessel, index }: { vessel: Vessel; index: number }) {
         {/* Stats */}
         <div className="flex items-center gap-3 mt-1.5 text-[9px] font-mono">
           <div className="flex items-center gap-1">
-            <span className="text-[var(--green)]">\u25B2</span>
+            <span className="text-[var(--green)]">▲</span>
             <span className="text-[var(--text-dim)]">LOAD</span>
             <span className="font-bold text-[var(--green)]">{formatCount(vessel.loadingDone)}</span>
             <span className="text-[var(--text-dim)]">/{formatCount(vessel.loadingTotal)}</span>
           </div>
           <div className="flex items-center gap-1">
-            <span className="text-[var(--amber)]">\u25BC</span>
+            <span className="text-[var(--amber)]">▼</span>
             <span className="text-[var(--text-dim)]">DISCH</span>
             <span className="font-bold text-[var(--amber)]">{formatCount(vessel.dischargingDone)}</span>
             <span className="text-[var(--text-dim)]">/{formatCount(vessel.dischargingTotal)}</span>

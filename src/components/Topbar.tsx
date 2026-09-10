@@ -29,25 +29,84 @@ export function Topbar({ activeScreen, onNavigate }: { activeScreen: ScreenKey |
   };
 
   return (
-    <header className="relative z-50 flex h-14 shrink-0 items-center justify-between border-b border-white/[0.1] bg-[rgba(5,8,13,0.96)] px-5 shadow-depth-2">
-      <div className="flex min-w-0 items-center gap-4">
-        <div className="flex items-center gap-3 border-r border-white/[0.1] pr-5">
-          <picture className="flex h-9 w-14 items-center justify-center overflow-hidden rounded-md border border-white/[0.12] bg-white">
-            <source media="(prefers-color-scheme: light)" srcSet="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/logo1-Lrzvmwbf0y3CtFgi543jTv9PJ9p5g7.png" />
-            <img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/logo1_darkmode-H8f4fG42wi2edfPaWDD1o6VzjiouzW.png" alt="Port Smart-Ops logo" className="h-full w-full object-contain" />
-          </picture>
-          <div className="leading-none"><div className="text-[11px] font-bold tracking-[0.2em] text-[var(--text-bright)]">CONTROL ROOM</div><div className="mt-1 text-[8px] font-mono tracking-[0.16em] text-[var(--text-dim)]">PORT SMART-OPS / LIVE</div></div>
-        </div>
-        {user && <div className="flex items-center gap-2 text-[9px] font-mono uppercase tracking-[0.16em] text-[var(--text-secondary)]"><span className="status-dot size-1.5 rounded-full bg-[var(--green)]" />{activeTerm} TERMINAL</div>}
+    <header className="relative z-50 flex h-12 shrink-0 items-center justify-between border-b border-white/[0.06] bg-[var(--bg-deep)] px-4">
+      {/* Left: Logo + Terminal */}
+      <div className="flex items-center gap-3">
+        <img src="/logo/full-dark.png" alt="Logo" className="h-8 object-contain" />
+        {user && (
+          <div className="flex items-center gap-1.5 text-[9px] font-mono uppercase tracking-wider text-[var(--text-secondary)]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--green)] status-dot" style={{ color: "var(--green)" }} />
+            {activeTerm}
+          </div>
+        )}
       </div>
 
-      {user ? <nav aria-label="Monitor navigation" className="absolute left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-lg border border-white/[0.1] bg-white/[0.025] p-1">
-        {filteredScreens.map((key) => <button key={key} onClick={() => onNavigate(key)} className={`rounded-md px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.08em] transition-colors ${activeScreen === key ? "bg-[var(--cyan)]/15 text-[var(--cyan)]" : "text-[var(--text-secondary)] hover:bg-white/[0.06] hover:text-[var(--text-bright)]"}`}>{SCREEN_LABELS[key] ?? key}</button>)}
-      </nav> : <div className="hidden text-[9px] font-mono uppercase tracking-[0.18em] text-[var(--text-dim)] md:block">Restricted operations interface</div>}
+      {/* Center: Nav */}
+      {user ? (
+        <nav className="absolute left-1/2 -translate-x-1/2 flex items-center gap-0.5 bg-white/[0.03] rounded-lg p-0.5 border border-white/[0.04]">
+          {filteredScreens.map((key) => (
+            <button
+              key={key}
+              onClick={() => onNavigate(key)}
+              className={`px-3 py-1 rounded-md text-[11px] font-semibold tracking-wide transition-all duration-200 ${
+                activeScreen === key
+                  ? "bg-white/[0.08] text-[var(--text-bright)] shadow-sm"
+                  : "text-[var(--text-dim)] hover:text-[var(--text-secondary)] hover:bg-white/[0.04]"
+              }`}
+            >
+              {SCREEN_LABELS[key] ?? key}
+            </button>
+          ))}
+        </nav>
+      ) : (
+        <div className="text-[9px] font-mono uppercase tracking-[0.15em] text-[var(--text-dim)]">Restricted Operations Interface</div>
+      )}
 
+      {/* Right: Clock + User */}
       <div className="flex items-center gap-4">
-        <div className="text-right font-mono leading-none"><div className="text-[13px] font-bold tabular-nums text-[var(--text-bright)]">{timeStr}</div><div className="mt-1 text-[8px] tracking-[0.12em] text-[var(--text-dim)]">{dateStr}</div></div>
-        {user ? <><div className="h-6 w-px bg-white/[0.1]" /><div className="flex items-center gap-2"><div className="flex size-7 items-center justify-center rounded-md bg-[var(--orange)]/15 text-[10px] font-bold text-[var(--orange)]">{user.full_name?.charAt(0) ?? "U"}</div><span className="hidden text-[10px] font-medium text-[var(--text-secondary)] lg:block">{user.full_name}</span></div><button onClick={logout} className="rounded border border-[var(--red)]/35 px-2.5 py-1.5 text-[9px] font-bold uppercase tracking-[0.15em] text-[var(--red)] transition-colors hover:bg-[var(--red)]/10">EXIT</button></> : <form onSubmit={handleLogin} className="flex items-center gap-2">{loginError && <span className="max-w-[120px] truncate text-[9px] font-mono text-[var(--red)]">{loginError}</span>}<input aria-label="Username" type="text" placeholder="USER ID" value={username} onChange={(event) => setUsername(event.target.value)} className="h-8 w-24 rounded border border-white/[0.12] bg-white/[0.04] px-2 text-[10px] font-mono text-[var(--text-bright)] placeholder:text-[var(--text-dim)] focus:border-[var(--cyan)] focus:outline-none" autoComplete="username" disabled={submitting} /><input aria-label="Password" type="password" placeholder="PASSCODE" value={password} onChange={(event) => setPassword(event.target.value)} className="h-8 w-24 rounded border border-white/[0.12] bg-white/[0.04] px-2 text-[10px] font-mono text-[var(--text-bright)] placeholder:text-[var(--text-dim)] focus:border-[var(--cyan)] focus:outline-none" autoComplete="current-password" disabled={submitting} /><button type="submit" disabled={submitting || !username || !password} className="h-8 rounded bg-[var(--cyan)] px-3 text-[10px] font-bold tracking-[0.1em] text-[var(--bg-void)] transition-opacity hover:opacity-85 disabled:opacity-30">{submitting ? "..." : "ENTER"}</button></form>}
+        <div className="text-right font-mono leading-none">
+          <div className="text-sm font-bold text-[var(--text-bright)] tabular-nums">{timeStr}</div>
+          <div className="text-[8px] text-[var(--text-dim)] tracking-widest mt-0.5">{dateStr}</div>
+        </div>
+        {user ? (
+          <>
+            <div className="w-px h-5 bg-white/[0.08]" />
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[var(--cyan)] to-[var(--blue)] flex items-center justify-center text-[9px] font-bold text-white">
+                {user.full_name?.charAt(0) ?? "U"}
+              </div>
+              <span className="text-[11px] font-medium text-[var(--text-secondary)]">{user.full_name}</span>
+            </div>
+            <button
+              onClick={logout}
+              className="text-[9px] font-bold uppercase tracking-[0.15em] text-[var(--red)] border border-[var(--red)]/20 px-2.5 py-1 rounded hover:bg-[var(--red)]/10 transition-all duration-200"
+            >
+              EXIT
+            </button>
+          </>
+        ) : (
+          <form onSubmit={handleLogin} className="flex items-center gap-2">
+            {loginError && <span className="text-[10px] font-mono text-[var(--red)] max-w-[120px] truncate">{loginError}</span>}
+            <input
+              type="text" placeholder="user" value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="h-7 px-2.5 text-[11px] font-mono bg-white/[0.04] border border-white/[0.08] text-[var(--text-bright)] placeholder-[var(--text-dim)] focus:outline-none focus:border-[var(--cyan)]/40 rounded w-24 transition-colors"
+              autoComplete="username" disabled={submitting}
+            />
+            <input
+              type="password" placeholder="pass" value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="h-7 px-2.5 text-[11px] font-mono bg-white/[0.04] border border-white/[0.08] text-[var(--text-bright)] placeholder-[var(--text-dim)] focus:outline-none focus:border-[var(--cyan)]/40 rounded w-24 transition-colors"
+              autoComplete="current-password" disabled={submitting}
+            />
+            <button
+              type="submit" disabled={submitting || !username || !password}
+              className="h-7 px-3 text-[10px] font-bold uppercase tracking-widest text-[var(--bg-void)] bg-[var(--cyan)] hover:opacity-90 disabled:opacity-30 transition-all rounded"
+            >
+              {submitting ? "\u2026" : "GO"}
+            </button>
+          </form>
+        )}
       </div>
     </header>
   );

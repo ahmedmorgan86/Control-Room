@@ -26,28 +26,22 @@ export async function POST(req: NextRequest) {
       cache: "no-store",
     });
     if (res.ok) {
-      const json = await res.json();
-      const u = json.user ?? json;
-      user = {
-        username: u.username ?? username,
-        full_name: u.full_name ?? username,
-        screens: u.screens ?? {},
-      };
+      const json = await res.json().catch(() => null);
+      if (json) {
+        const u = json.user ?? json;
+        user = {
+          username: u.username ?? username,
+          full_name: u.full_name ?? username,
+          screens: u.screens ?? {},
+        };
+      }
     }
   } catch {
-    // Backend unreachable — allow local login with default screens
-    user = {
-      username,
-      full_name: username,
-      screens: {
-        ACT_VSL_MONITOR: true,
-        DCT_VSL_MONITOR: true,
-        ACT_EQU_MONITOR: true,
-        DCT_EQU_MONITOR: true,
-        ACT_YARD_MONITOR: true,
-        DCT_YARD_MONITOR: true,
-      },
-    };
+    // Backend unreachable — deny login instead of bypassing
+    return NextResponse.json(
+      { error: "Backend unreachable. Please try again later." },
+      { status: 503 },
+    );
   }
 
   if (!user) {
@@ -59,7 +53,8 @@ export async function POST(req: NextRequest) {
   const nextRes = NextResponse.json({ user: front });
   nextRes.cookies.set("sess", token, {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: "strict",
+    secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: 60 * 60 * 8,
   });

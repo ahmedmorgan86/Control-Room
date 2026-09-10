@@ -17,7 +17,8 @@ export const SCREEN_LABELS: Record<ScreenKey, string> = {
 export function screenKind(key: ScreenKey): MonitorKind {
   if (key.includes("VSL")) return "VSL";
   if (key.includes("EQU")) return "EQU";
-  if (key.includes("YARD") || key.includes("YT")) return "YARD";
+  if (key.includes("YARD")) return "YARD";
+  if (key.includes("YT")) return "YARD";
   return "OTHER";
 }
 
@@ -39,6 +40,5 @@ export function getUserScreens(user: User | null): ScreenKey[] {
       .filter(([, v]) => v)
       .map(([k]) => k),
   );
-  if (enabled.length > 0) return enabled;
-  return sortScreens(["ACT_VSL_MONITOR", "ACT_EQU_MONITOR", "ACT_YARD_MONITOR"]);
+  return enabled;
 }

@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import type { YardData, BlockType, Violation } from "@/lib/types";
 import { usePolling } from "@/lib/usePolling";
 import { formatCount, BLOCK_COLORS } from "@/lib/ui";
+import { useMouseTilt } from "@/lib/useMouseTilt";
 import { MonitorHeader } from "@/components/MonitorHeader";
 
 const CATS: { label: string; types: BlockType[]; color: string }[] = [
@@ -11,21 +12,6 @@ const CATS: { label: string; types: BlockType[]; color: string }[] = [
   { label: "High Traffic", types: ["IMP", "EXP", "IMP_EXP"], color: "#10b981" },
   { label: "Auxiliary", types: ["EMPTY", "CFS", "INSP", "NEGLECT", "OTHER"], color: "#64748b" },
 ];
-
-function useMouseTilt(intensity = 4) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [style, setStyle] = useState<React.CSSProperties>({});
-  const onMove = useCallback((e: React.MouseEvent) => {
-    const el = ref.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    const x = (e.clientX - r.left) / r.width - 0.5;
-    const y = (e.clientY - r.top) / r.height - 0.5;
-    setStyle({ transform: `perspective(600px) rotateX(${-y * intensity}deg) rotateY(${x * intensity}deg) translateZ(8px)` });
-  }, [intensity]);
-  const onLeave = useCallback(() => setStyle({ transform: "perspective(600px) rotateX(0) rotateY(0) translateZ(0)" }), []);
-  return { ref, style, onMove, onLeave };
-}
 
 function Gauge({ ratio }: { ratio: number }) {
   const pct = Math.round(ratio * 100);

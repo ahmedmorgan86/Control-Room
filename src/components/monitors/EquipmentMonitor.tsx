@@ -1,26 +1,12 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import type { EquipmentData, EquCard } from "@/lib/types";
 import { usePolling } from "@/lib/usePolling";
 import { formatCount, tttColor, tttLabel } from "@/lib/ui";
+import { useMouseTilt } from "@/lib/useMouseTilt";
 import { MonitorHeader } from "@/components/MonitorHeader";
 import { EquipmentIcon } from "@/components/EquipmentIcon";
-
-function useMouseTilt(intensity = 4) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [style, setStyle] = useState<React.CSSProperties>({});
-  const onMove = useCallback((e: React.MouseEvent) => {
-    const el = ref.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    const x = (e.clientX - r.left) / r.width - 0.5;
-    const y = (e.clientY - r.top) / r.height - 0.5;
-    setStyle({ transform: `perspective(600px) rotateX(${-y * intensity}deg) rotateY(${x * intensity}deg) translateZ(6px)` });
-  }, [intensity]);
-  const onLeave = useCallback(() => setStyle({ transform: "perspective(600px) rotateX(0) rotateY(0) translateZ(0)" }), []);
-  return { ref, style, onMove, onLeave };
-}
 
 function YTCard({ yt, index }: { yt: EquCard; index: number }) {
   const online = yt.isOnline;
@@ -41,7 +27,7 @@ function YTCard({ yt, index }: { yt: EquCard; index: number }) {
       </div>
       {yt.driverName && <div className="text-[8px] font-mono text-[var(--text-secondary)] truncate mb-0.5" dir="rtl">{yt.driverName}</div>}
       <div className="flex items-center justify-between text-[7px] font-mono text-[var(--text-dim)]">
-        <span>{yt.assignedQc ?? "\u2014"}</span>
+        <span>{yt.assignedQc ?? "—"}</span>
         <span style={{ color: tttColor(yt.tttMinutes) }}>{tttLabel(yt.tttMinutes)}</span>
       </div>
     </div>
@@ -97,7 +83,7 @@ function YardCard({ card, index }: { card: EquCard; index: number }) {
       <div className="text-[8px] font-mono text-[var(--text-secondary)] truncate">{card.driverName ?? "No Driver"}</div>
       <div className="flex items-center justify-between text-[7px] font-mono mt-0.5">
         <span className={card.jobType ? "text-[var(--green)]" : "text-[var(--text-dim)]"}>{card.jobType ?? "Idle"}</span>
-        {card.assignedQc && <span className="text-[var(--amber)]">\u2192 {card.assignedQc}</span>}
+        {card.assignedQc && <span className="text-[var(--amber)]">→ {card.assignedQc}</span>}
       </div>
     </div>
   );

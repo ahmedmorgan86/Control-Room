@@ -1,17 +1,4 @@
-import type { BlockType, EquType, Severity } from "@/lib/types";
-
-export const BLOCK_LABELS: Record<BlockType, string> = {
-  DG: "DG",
-  RF: "RF",
-  EMPTY: "EMPTY",
-  IMP_EXP: "IMP/EXP",
-  IMP: "IMP",
-  EXP: "EXP",
-  CFS: "CFS",
-  INSP: "INSP",
-  NEGLECT: "NEGLECT",
-  OTHER: "OTHER",
-};
+import type { BlockType } from "@/lib/types";
 
 export const BLOCK_COLORS: Record<BlockType, string> = {
   DG: "#ef4444",
@@ -24,33 +11,6 @@ export const BLOCK_COLORS: Record<BlockType, string> = {
   INSP: "#06b6d4",
   NEGLECT: "#a855f7",
   OTHER: "#475569",
-};
-
-export const SEVERITY_COLORS: Record<Severity, string> = {
-  CRITICAL: "#ef4444",
-  HIGH: "#f97316",
-  MEDIUM: "#eab308",
-  LOW: "#64748b",
-};
-
-export const EQU_LABELS: Record<EquType, string> = {
-  QC: "Quay Crane",
-  YT: "Yard Truck",
-  RTG: "Rubber-Tyred Gantry",
-  RS: "Reach Stacker",
-  TL: "Toplift",
-  SUPPORT: "Support",
-  UNK: "Equipment",
-};
-
-export const EQU_ACCENTS: Record<EquType, string> = {
-  QC: "#f59e0b",
-  YT: "#10b981",
-  RTG: "#f97316",
-  RS: "#0ea5e9",
-  TL: "#8b5cf6",
-  SUPPORT: "#64748b",
-  UNK: "#64748b",
 };
 
 export function formatCount(v: number | undefined | null): string {
@@ -71,13 +31,6 @@ export function formatArrival(iso: string | null | undefined): string {
   });
 }
 
-export function fillColor(ratio: number): string {
-  if (ratio > 0.85) return "#ef4444";
-  if (ratio > 0.7) return "#f59e0b";
-  if (ratio > 0.5) return "#10b981";
-  return "#00f0ff";
-}
-
 export function tttColor(min: number | null | undefined): string {
   if (min == null) return "#64748b";
   if (min >= 30) return "#ef4444";
@@ -92,17 +45,4 @@ export function tttLabel(min: number | null | undefined): string {
   const h = Math.floor(min / 60);
   const m = Math.round(min % 60);
   return `${h}h ${m}m`;
-}
-
-export function blockTypeFromPosition(pos: string | null | undefined): BlockType {
-  if (!pos) return "OTHER";
-  const p = pos.toUpperCase().trim();
-  if (p === "INSP") return "INSP";
-  if (/^(S002|S068)$/.test(p)) return "INSP";
-  if (/^[A-D]$/.test(p)) return "EXP";
-  if (p === "H") return "IMP";
-  if (p.startsWith("R") && /^R[0-9]/.test(p)) return "RF";
-  if (p.startsWith("E")) return "EMPTY";
-  if (p.startsWith("C")) return "CFS";
-  return "OTHER";
 }
