@@ -155,32 +155,29 @@ export function YardMonitor({ terminalCode }: { terminalCode: string }) {
           </div>
 
           {/* Right: Sidebar */}
+          {summary && (
           <div className="w-56 shrink-0 space-y-2 overflow-y-auto">
             <div className="bg-[var(--bg-surface)] border border-white/[0.06] rounded-2xl p-3 card-3d shadow-depth-2 animate-fade-right gradient-border">
               <h4 className="text-[8px] font-mono font-bold text-[var(--text-dim)] uppercase tracking-[0.2em] mb-2 text-center">Utilization</h4>
-              {summary && <Gauge ratio={summary.overallFillRatio} />}
-              {summary && (
-                <div className="mt-2">
-                  <Stat label="TEU" value={formatCount(summary.totalOccupied)} color="var(--cyan)" />
-                  <Stat label="Reefers" value={summary.reeferCount} color="#06b6d4" />
-                  <Stat label="Dangerous" value={summary.dgCount} color="var(--red)" />
-                  <Stat label="Neglect" value={summary.neglectCount} color="var(--purple)" />
-                </div>
-              )}
+              <Gauge ratio={summary.overallFillRatio} />
+              <div className="mt-2">
+                <Stat label="TEU" value={formatCount(summary.totalOccupied)} color="var(--cyan)" />
+                <Stat label="Reefers" value={summary.reeferCount} color="#06b6d4" />
+                <Stat label="Dangerous" value={summary.dgCount} color="var(--red)" />
+                <Stat label="Neglect" value={summary.neglectCount} color="var(--purple)" />
+              </div>
             </div>
 
             <div className="bg-[var(--bg-surface)] border border-white/[0.06] rounded-2xl p-3 card-3d shadow-depth-2 animate-fade-right d2 gradient-border">
               <h4 className="text-[8px] font-mono font-bold text-[var(--text-dim)] uppercase tracking-[0.2em] mb-2">Alert Summary</h4>
-              {summary && (
-                <div className="grid grid-cols-2 gap-1.5">
-                  {[["Critical", summary.criticalCount, "#ef4444"], ["High", summary.highCount, "#f97316"], ["Medium", summary.mediumCount, "#eab308"], ["Total", summary.totalViolations, "#64748b"]].map(([l, v, c]) => (
-                    <div key={l as string} className="rounded-lg p-1.5 text-center" style={{ backgroundColor: `${c}08`, border: `1px solid ${c}20` }}>
-                      <span className="text-xs font-mono font-black block" style={{ color: c as string }}>{v as number}</span>
-                      <span className="text-[6px] font-mono uppercase" style={{ color: c as string }}>{l as string}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <div className="grid grid-cols-2 gap-1.5">
+                {[["Critical", summary.criticalCount, "#ef4444"], ["High", summary.highCount, "#f97316"], ["Medium", summary.mediumCount, "#eab308"], ["Total", summary.totalViolations, "#64748b"]].map(([l, v, c]) => (
+                  <div key={l as string} className="rounded-lg p-1.5 text-center" style={{ backgroundColor: `${c}08`, border: `1px solid ${c}20` }}>
+                    <span className="text-xs font-mono font-black block" style={{ color: c as string }}>{v as number}</span>
+                    <span className="text-[6px] font-mono uppercase" style={{ color: c as string }}>{l as string}</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {crits.length > 0 && (
@@ -192,6 +189,7 @@ export function YardMonitor({ terminalCode }: { terminalCode: string }) {
               </div>
             )}
           </div>
+          )}
         </div>
       </main>
     </>

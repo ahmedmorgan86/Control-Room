@@ -111,7 +111,7 @@ function CraneTable({ cranes }: { cranes: Crane[] }) {
 function VesselCard({ vessel, index }: { vessel: Vessel; index: number }) {
   const pct = vessel.totalMoves > 0 ? Math.min(100, Math.round((vessel.totalDone / vessel.totalMoves) * 100)) : 0;
   const t = useMouseTilt(5);
-  const delay = `d${index + 1}`;
+  const delay = `d${(index % 12) + 1}`;
 
   return (
     <div
@@ -186,7 +186,7 @@ function VesselCard({ vessel, index }: { vessel: Vessel; index: number }) {
 }
 
 export function VesselMonitor({ terminalCode }: { terminalCode: string }) {
-  const { data: vessels, loading, error, lastUpdated } = usePolling<Vessel[]>(`/api/vessels?terminal=${terminalCode}`, 60000);
+  const { data: vessels, loading, error, lastUpdated, refresh } = usePolling<Vessel[]>(`/api/vessels?terminal=${terminalCode}`, 60000);
   const count = vessels?.length ?? 0;
 
   if (loading && !vessels) return (
@@ -206,7 +206,7 @@ export function VesselMonitor({ terminalCode }: { terminalCode: string }) {
         <div className="glass rounded-2xl px-10 py-6 text-center card-3d shadow-depth-3 gradient-border">
           <div className="text-[10px] font-bold font-mono text-[var(--red)] uppercase tracking-[0.2em] mb-1">Connection Fault</div>
           <p className="text-[11px] font-mono text-[var(--text-secondary)] mb-3">{error}</p>
-          <button className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white bg-[var(--red)] hover:bg-[var(--red)]/80 rounded transition-all">Retry</button>
+          <button onClick={() => refresh()} className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white bg-[var(--red)] hover:bg-[var(--red)]/80 rounded transition-all">Retry</button>
         </div>
       </div>
     </>

@@ -19,7 +19,7 @@ export function Topbar({ activeScreen, onNavigate }: { activeScreen: ScreenKey |
   const myScreens = useMemo<ScreenKey[]>(() => getUserScreens(user), [user]);
   const terminals = useMemo(() => { const set = new Set<string>(); myScreens.forEach((key) => { const terminal = screenTerminal(key); if (terminal) set.add(terminal); }); return ["ACT", "DCT"].filter((terminal) => set.has(terminal)); }, [myScreens]);
   const activeTerm = activeScreen ? (screenTerminal(activeScreen) ?? terminals[0] ?? "DCT") : terminals[0] ?? "DCT";
-  const filteredScreens = useMemo(() => myScreens.filter((screen) => screen.startsWith(activeTerm) && !screen.includes("YT")), [myScreens, activeTerm]);
+  const filteredScreens = useMemo(() => myScreens.filter((screen) => screen.startsWith(activeTerm)), [myScreens, activeTerm]);
 
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault(); setLoginError(null); setSubmitting(true);

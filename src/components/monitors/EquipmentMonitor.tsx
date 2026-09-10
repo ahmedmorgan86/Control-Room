@@ -40,7 +40,7 @@ function QCRow({ qc, index }: { qc: EquipmentData["qcGroups"][0]; index: number 
   return (
     <div
       ref={t.ref} onMouseMove={t.onMove} onMouseLeave={t.onLeave}
-      className={`card-3d bg-[var(--bg-surface)] border border-white/[0.06] rounded-2xl overflow-hidden shadow-depth-2 animate-fade-left d${index + 1}`}
+      className={`card-3d bg-[var(--bg-surface)] border border-white/[0.06] rounded-2xl overflow-hidden shadow-depth-2 animate-fade-left d${(index % 12) + 1}`}
       style={t.style}
     >
       <div className="flex">

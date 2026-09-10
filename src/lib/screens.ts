@@ -1,4 +1,4 @@
-import type { MonitorKind, ScreenKey, User } from "@/lib/types";
+import type { ScreenKey, Terminal, User } from "@/lib/types";
 
 export const SCREEN_LABELS: Record<ScreenKey, string> = {
   ACT_VSL_MONITOR: "VESSEL MONITOR",
@@ -14,17 +14,9 @@ export const SCREEN_LABELS: Record<ScreenKey, string> = {
   BERTH_MONITOR: "BERTH MONITOR",
 };
 
-export function screenKind(key: ScreenKey): MonitorKind {
-  if (key.includes("VSL")) return "VSL";
-  if (key.includes("EQU")) return "EQU";
-  if (key.includes("YARD")) return "YARD";
-  if (key.includes("YT")) return "YARD";
-  return "OTHER";
-}
-
-export function screenTerminal(key: ScreenKey): string | null {
+export function screenTerminal(key: ScreenKey): Terminal | null {
   const parts = key.split("_");
-  return parts[0] === "ACT" || parts[0] === "DCT" ? parts[0] : null;
+  return parts[0] === "ACT" || parts[0] === "DCT" ? (parts[0] as Terminal) : null;
 }
 
 export function sortScreens(keys: ScreenKey[]): ScreenKey[] {
