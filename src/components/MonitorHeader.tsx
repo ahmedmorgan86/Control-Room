@@ -19,12 +19,12 @@ export function MonitorHeader({ title, stats, lastUpdated }: { title: string; st
         </span>
         {stats}
         {lastUpdated && (
-          <span className="hidden text-[9px] font-mono text-[var(--text-dim)] sm:inline">
+          <span className="text-[9px] font-mono text-[var(--text-dim)]">
             SYNC {lastUpdated.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
           </span>
         )}
       </div>
-      <div className="font-mono text-[11px] font-bold tabular-nums text-[var(--text-secondary)]">{timeStr}</div>
+      <div className="font-mono text-[13px] font-bold tabular-nums text-[var(--text-secondary)]">{timeStr}</div>
     </div>
   );
 }

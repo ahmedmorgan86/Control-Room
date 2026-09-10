@@ -8,16 +8,16 @@ import { useMouseTilt } from "@/lib/useMouseTilt";
 import { MonitorHeader } from "@/components/MonitorHeader";
 
 const CATS: { label: string; types: BlockType[]; color: string }[] = [
-  { label: "Special Containers", types: ["DG", "RF"], color: "#ef4444" },
-  { label: "High Traffic", types: ["IMP", "EXP", "IMP_EXP"], color: "#10b981" },
-  { label: "Auxiliary", types: ["EMPTY", "CFS", "INSP", "NEGLECT", "OTHER"], color: "#64748b" },
+  { label: "Special Containers", types: ["DG", "RF"], color: "var(--red)" },
+  { label: "High Traffic", types: ["IMP", "EXP", "IMP_EXP"], color: "var(--green)" },
+  { label: "Auxiliary", types: ["EMPTY", "CFS", "INSP", "NEGLECT", "OTHER"], color: "var(--text-secondary)" },
 ];
 
 function Gauge({ ratio }: { ratio: number }) {
   const pct = Math.round(ratio * 100);
   const C = 2 * Math.PI * 50;
   const off = C * (1 - ratio);
-  const color = pct >= 90 ? "#ef4444" : pct >= 70 ? "#f59e0b" : "#10b981";
+  const color = pct >= 90 ? "var(--red)" : pct >= 70 ? "var(--amber)" : "var(--green)";
   return (
     <div className="relative w-24 h-24 mx-auto animate-float">
       <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90">
@@ -26,7 +26,7 @@ function Gauge({ ratio }: { ratio: number }) {
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-lg font-mono font-black" style={{ color }}>{pct}%</span>
-        <span className="text-[6px] font-mono text-[var(--text-dim)] uppercase tracking-widest">Capacity</span>
+        <span className="text-[8px] font-mono text-[var(--text-dim)] uppercase tracking-widest">Capacity</span>
       </div>
     </div>
   );
@@ -35,32 +35,32 @@ function Gauge({ ratio }: { ratio: number }) {
 function Stat({ label, value, color }: { label: string; value: string | number; color: string }) {
   return (
     <div className="flex items-center justify-between py-1 border-b border-white/[0.04] last:border-0">
-      <span className="text-[8px] font-mono text-[var(--text-dim)] uppercase tracking-wider">{label}</span>
+      <span className="text-[9px] font-mono text-[var(--text-dim)] uppercase tracking-wider">{label}</span>
       <span className="text-[10px] font-mono font-bold" style={{ color }}>{value}</span>
     </div>
   );
 }
 
 function Alert({ v, i }: { v: Violation; i: number }) {
-  const c = v.severity === "CRITICAL" ? "#ef4444" : v.severity === "HIGH" ? "#f97316" : v.severity === "MEDIUM" ? "#eab308" : "#475569";
+  const c = v.severity === "CRITICAL" ? "var(--red)" : v.severity === "HIGH" ? "var(--orange)" : v.severity === "MEDIUM" ? "var(--yellow)" : "var(--text-dim)";
   return (
     <div className={`flex items-start gap-1.5 py-1 border-b border-white/[0.03] last:border-0 animate-slide-up d${(i % 8) + 1}`}>
       <span className="w-1 h-1 rounded-full mt-1 shrink-0" style={{ backgroundColor: c }} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
           <span className="text-[8px] font-mono font-bold text-[var(--text-bright)]">{v.cntrNo}</span>
-          <span className="text-[7px] font-mono text-[var(--text-dim)]">{v.block}</span>
+          <span className="text-[8px] font-mono text-[var(--text-dim)]">{v.block}</span>
         </div>
-        <p className="text-[7px] font-mono text-[var(--text-secondary)] truncate">{v.description}</p>
+        <p className="text-[8px] font-mono text-[var(--text-secondary)] truncate">{v.description}</p>
       </div>
-      <span className="text-[6px] px-1 py-px rounded font-bold shrink-0" style={{ backgroundColor: `${c}18`, color: c }}>{v.severity}</span>
+      <span className="text-[8px] px-1 py-px rounded font-bold shrink-0" style={{ backgroundColor: `color-mix(in srgb, ${c} 12%, transparent)`, color: c }}>{v.severity}</span>
     </div>
   );
 }
 
 function Block({ b, i }: { b: YardData["blocks"][0]; i: number }) {
   const pct = Math.round(b.fillRatio * 100);
-  const color = pct >= 90 ? "#ef4444" : pct >= 70 ? "#f59e0b" : "#10b981";
+  const color = pct >= 90 ? "var(--red)" : pct >= 70 ? "var(--amber)" : "var(--green)";
   const t = useMouseTilt(3);
 
   return (
@@ -71,22 +71,22 @@ function Block({ b, i }: { b: YardData["blocks"][0]; i: number }) {
     >
       <div className="flex items-center justify-between mb-0.5">
         <span className="text-[9px] font-mono font-bold text-[var(--text-bright)]">{b.blockId}</span>
-        <span className="text-[6px] font-mono px-1 py-px rounded" style={{ backgroundColor: `${BLOCK_COLORS[b.blockType]}18`, color: BLOCK_COLORS[b.blockType], border: `1px solid ${BLOCK_COLORS[b.blockType]}30` }}>{b.blockType}</span>
+        <span className="text-[8px] font-mono px-1 py-px rounded" style={{ backgroundColor: `color-mix(in srgb, ${BLOCK_COLORS[b.blockType]} 12%, transparent)`, color: BLOCK_COLORS[b.blockType], border: `1px solid color-mix(in srgb, ${BLOCK_COLORS[b.blockType]} 20%, transparent)` }}>{b.blockType}</span>
       </div>
       <div className="w-full h-1 bg-white/[0.06] rounded-full overflow-hidden">
         <div className="h-full rounded-full progress-glow" style={{ width: `${pct}%`, backgroundColor: color }} />
       </div>
-      <div className="flex justify-between text-[7px] font-mono text-[var(--text-dim)] mt-0.5">
+      <div className="flex justify-between text-[8px] font-mono text-[var(--text-dim)] mt-0.5">
         <span>{formatCount(b.occupiedTeu)}/{formatCount(b.capacityTeu)}</span>
         <span style={{ color }} className="font-bold">{pct}%</span>
       </div>
-      {b.violationCount > 0 && <div className="text-[6px] font-mono text-[var(--red)] mt-0.5">{b.violationCount} violations</div>}
+      {b.violationCount > 0 && <div className="text-[8px] font-mono text-[var(--red)] mt-0.5">{b.violationCount} violations</div>}
     </div>
   );
 }
 
 export function YardMonitor({ terminalCode }: { terminalCode: string }) {
-  const { data, loading, error, lastUpdated } = usePolling<YardData>(`/api/yard?terminal=${terminalCode}`, 60000);
+  const { data, loading, error, lastUpdated, refresh } = usePolling<YardData>(`/api/yard?terminal=${terminalCode}`, 60000);
   const blocks = data?.blocks ?? [];
   const violations = data?.violations ?? [];
   const summary = data?.summary;
@@ -113,9 +113,10 @@ export function YardMonitor({ terminalCode }: { terminalCode: string }) {
     <>
       <MonitorHeader title={`${terminalCode} Yard Monitor`} />
       <div className="flex-1 flex items-center justify-center">
-        <div className="glass rounded-2xl px-10 py-6 text-center card-3d gradient-border">
+        <div className="glass rounded-2xl px-10 py-6 text-center card-3d">
           <div className="text-[10px] font-bold font-mono text-[var(--red)] uppercase tracking-[0.2em] mb-1">Connection Fault</div>
-          <p className="text-[11px] font-mono text-[var(--text-secondary)]">{error}</p>
+          <p className="text-[11px] font-mono text-[var(--text-secondary)] mb-3">{error}</p>
+          <button onClick={() => refresh()} className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white bg-[var(--red)] hover:opacity-80 rounded transition-all">Retry</button>
         </div>
       </div>
     </>
@@ -135,8 +136,8 @@ export function YardMonitor({ terminalCode }: { terminalCode: string }) {
                 <section key={cat.label}>
                   <div className="flex items-center gap-2 mb-1">
                     <div className="w-0.5 h-3.5 rounded-full" style={{ backgroundColor: cat.color }} />
-                    <h3 className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-[0.15em]">{cat.label}</h3>
-                    <span className="text-[8px] font-mono text-[var(--text-dim)]">({cb.length})</span>
+                    <h3 className="text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-[0.15em]">{cat.label}</h3>
+                    <span className="text-[9px] font-mono text-[var(--text-dim)]">({cb.length})</span>
                   </div>
                   <div className="grid grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-1.5">
                     {cb.map((b, i) => <Block key={b.blockId} b={b} i={i} />)}
@@ -146,7 +147,7 @@ export function YardMonitor({ terminalCode }: { terminalCode: string }) {
             })}
             {blocks.length === 0 && (
               <div className="flex items-center justify-center h-full">
-                <div className="glass rounded-2xl px-12 py-8 text-center card-3d gradient-border">
+                <div className="glass rounded-2xl px-12 py-8 text-center card-3d">
                   <div className="text-[10px] font-bold font-mono uppercase tracking-[0.2em] text-[var(--text-dim)] mb-1">No Yard Data</div>
                   <p className="text-[11px] font-mono text-[var(--text-secondary)]">Waiting for yard blocks.</p>
                 </div>
@@ -162,7 +163,7 @@ export function YardMonitor({ terminalCode }: { terminalCode: string }) {
               <Gauge ratio={summary.overallFillRatio} />
               <div className="mt-2">
                 <Stat label="TEU" value={formatCount(summary.totalOccupied)} color="var(--cyan)" />
-                <Stat label="Reefers" value={summary.reeferCount} color="#06b6d4" />
+                <Stat label="Reefers" value={summary.reeferCount} color="var(--cyan)" />
                 <Stat label="Dangerous" value={summary.dgCount} color="var(--red)" />
                 <Stat label="Neglect" value={summary.neglectCount} color="var(--purple)" />
               </div>
@@ -171,17 +172,17 @@ export function YardMonitor({ terminalCode }: { terminalCode: string }) {
             <div className="bg-[var(--bg-surface)] border border-white/[0.06] rounded-2xl p-3 card-3d shadow-depth-2 animate-fade-right d2 gradient-border">
               <h4 className="text-[8px] font-mono font-bold text-[var(--text-dim)] uppercase tracking-[0.2em] mb-2">Alert Summary</h4>
               <div className="grid grid-cols-2 gap-1.5">
-                {[["Critical", summary.criticalCount, "#ef4444"], ["High", summary.highCount, "#f97316"], ["Medium", summary.mediumCount, "#eab308"], ["Total", summary.totalViolations, "#64748b"]].map(([l, v, c]) => (
-                  <div key={l as string} className="rounded-lg p-1.5 text-center" style={{ backgroundColor: `${c}08`, border: `1px solid ${c}20` }}>
+                {[["Critical", summary.criticalCount, "var(--red)"], ["High", summary.highCount, "var(--orange)"], ["Medium", summary.mediumCount, "var(--yellow)"], ["Total", summary.totalViolations, "var(--text-secondary)"]].map(([l, v, c]) => (
+                  <div key={l as string} className="rounded-lg p-1.5 text-center" style={{ backgroundColor: `color-mix(in srgb, ${c as string} 8%, transparent)`, border: `1px solid color-mix(in srgb, ${c as string} 20%, transparent)` }}>
                     <span className="text-xs font-mono font-black block" style={{ color: c as string }}>{v as number}</span>
-                    <span className="text-[6px] font-mono uppercase" style={{ color: c as string }}>{l as string}</span>
+                    <span className="text-[8px] font-mono uppercase" style={{ color: c as string }}>{l as string}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             {crits.length > 0 && (
-              <div className="bg-[var(--bg-surface)] border border-[var(--red)]/15 rounded-2xl p-3 card-3d shadow-depth-2 animate-fade-right d3">
+              <div className="bg-[var(--bg-surface)] border border-[var(--red)]/15 rounded-2xl p-3 card-3d shadow-depth-2 animate-fade-right d3 gradient-border">
                 <h4 className="text-[8px] font-mono font-bold text-[var(--red)] uppercase tracking-[0.2em] mb-1.5">Priority Alerts</h4>
                 <div className="space-y-0 max-h-40 overflow-y-auto">
                   {crits.map((v, i) => <Alert key={i} v={v} i={i} />)}

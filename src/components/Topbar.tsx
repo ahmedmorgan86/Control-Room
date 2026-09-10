@@ -12,6 +12,7 @@ export function Topbar({ activeScreen, onNavigate }: { activeScreen: ScreenKey |
   const [loginError, setLoginError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [clock, setClock] = useState(() => new Date());
+  const [logoError, setLogoError] = useState(false);
   useEffect(() => { const id = setInterval(() => setClock(new Date()), 1000); return () => clearInterval(id); }, []);
 
   const timeStr = clock.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
@@ -32,7 +33,11 @@ export function Topbar({ activeScreen, onNavigate }: { activeScreen: ScreenKey |
     <header className="relative z-50 flex h-12 shrink-0 items-center justify-between border-b border-white/[0.06] bg-[var(--bg-deep)] px-4">
       {/* Left: Logo + Terminal */}
       <div className="flex items-center gap-3">
-        <img src="/logo/full-dark.png" alt="Logo" className="h-8 object-contain" />
+        {logoError ? (
+          <span className="text-[11px] font-bold text-[var(--cyan)] tracking-wider">SMART-OPS</span>
+        ) : (
+          <img src="/logo/full-dark.png" alt="Logo" className="h-8 object-contain" onError={() => setLogoError(true)} />
+        )}
         {user && (
           <div className="flex items-center gap-1.5 text-[9px] font-mono uppercase tracking-wider text-[var(--text-secondary)]">
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--green)] status-dot" style={{ color: "var(--green)" }} />
@@ -65,7 +70,7 @@ export function Topbar({ activeScreen, onNavigate }: { activeScreen: ScreenKey |
       {/* Right: Clock + User */}
       <div className="flex items-center gap-4">
         <div className="text-right font-mono leading-none">
-          <div className="text-sm font-bold text-[var(--text-bright)] tabular-nums">{timeStr}</div>
+          <div className="text-[13px] font-bold text-[var(--text-bright)] tabular-nums">{timeStr}</div>
           <div className="text-[8px] text-[var(--text-dim)] tracking-widest mt-0.5">{dateStr}</div>
         </div>
         {user ? (
@@ -103,7 +108,7 @@ export function Topbar({ activeScreen, onNavigate }: { activeScreen: ScreenKey |
               type="submit" disabled={submitting || !username || !password}
               className="h-7 px-3 text-[10px] font-bold uppercase tracking-widest text-[var(--bg-void)] bg-[var(--cyan)] hover:opacity-90 disabled:opacity-30 transition-all rounded"
             >
-              {submitting ? "\u2026" : "GO"}
+              {submitting ? "..." : "GO"}
             </button>
           </form>
         )}

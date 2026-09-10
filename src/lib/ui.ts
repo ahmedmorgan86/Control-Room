@@ -2,13 +2,13 @@ import type { BlockType } from "@/lib/types";
 
 export const BLOCK_COLORS: Record<BlockType, string> = {
   DG: "#ef4444",
-  RF: "#06b6d4",
+  RF: "#22d3ee",
   EMPTY: "#64748b",
   IMP_EXP: "#10b981",
   IMP: "#059669",
   EXP: "#10b981",
-  CFS: "#8b5cf6",
-  INSP: "#06b6d4",
+  CFS: "#a855f7",
+  INSP: "#22d3ee",
   NEGLECT: "#a855f7",
   OTHER: "#475569",
 };
@@ -32,11 +32,11 @@ export function formatArrival(iso: string | null | undefined): string {
 }
 
 export function tttColor(min: number | null | undefined): string {
-  if (min == null) return "#64748b";
-  if (min >= 30) return "#ef4444";
-  if (min >= 20) return "#f97316";
-  if (min >= 10) return "#f59e0b";
-  return "#10b981";
+  if (min == null) return "var(--text-secondary)";
+  if (min >= 30) return "var(--red)";
+  if (min >= 20) return "var(--orange)";
+  if (min >= 10) return "var(--amber)";
+  return "var(--green)";
 }
 
 export function tttLabel(min: number | null | undefined): string {

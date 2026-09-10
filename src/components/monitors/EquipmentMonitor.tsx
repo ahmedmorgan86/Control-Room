@@ -11,7 +11,7 @@ import { EquipmentIcon } from "@/components/EquipmentIcon";
 function YTCard({ yt, index }: { yt: EquCard; index: number }) {
   const online = yt.isOnline;
   const active = online && yt.jobType;
-  const statusColor = active ? "#10b981" : online ? "#f59e0b" : "#475569";
+  const statusColor = active ? "var(--green)" : online ? "var(--amber)" : "var(--text-dim)";
   const statusLabel = active ? yt.jobType! : online ? "Idle" : "Off";
   const t = useMouseTilt(3);
 
@@ -23,10 +23,10 @@ function YTCard({ yt, index }: { yt: EquCard; index: number }) {
     >
       <div className="flex items-center justify-between mb-0.5">
         <span className="text-[10px] font-mono font-bold text-[var(--cyan)]">{yt.equNo}</span>
-        <span className="text-[7px] px-1 py-px rounded font-bold" style={{ backgroundColor: `${statusColor}15`, color: statusColor, border: `1px solid ${statusColor}25` }}>{statusLabel}</span>
+        <span className="text-[8px] px-1 py-px rounded font-bold" style={{ backgroundColor: `color-mix(in srgb, ${statusColor} 15%, transparent)`, color: statusColor, border: `1px solid color-mix(in srgb, ${statusColor} 25%, transparent)` }}>{statusLabel}</span>
       </div>
-      {yt.driverName && <div className="text-[8px] font-mono text-[var(--text-secondary)] truncate mb-0.5" dir="rtl">{yt.driverName}</div>}
-      <div className="flex items-center justify-between text-[7px] font-mono text-[var(--text-dim)]">
+      {yt.driverName && <div className="text-[8px] font-mono text-[var(--text-secondary)] truncate mb-0.5">{yt.driverName}</div>}
+      <div className="flex items-center justify-between text-[8px] font-mono text-[var(--text-dim)]">
         <span>{yt.assignedQc ?? "—"}</span>
         <span style={{ color: tttColor(yt.tttMinutes) }}>{tttLabel(yt.tttMinutes)}</span>
       </div>
@@ -49,8 +49,8 @@ function QCRow({ qc, index }: { qc: EquipmentData["qcGroups"][0]; index: number 
             <EquipmentIcon type="QC" className="w-4 h-4 text-[var(--amber)]" />
           </div>
           <span className="text-xs font-mono font-bold text-[var(--amber)]">{qc.qcNo}</span>
-          <span className="text-[7px] font-mono text-[var(--text-dim)] mt-0.5">{qc.qcCard.isOnline ? "Online" : "Offline"}</span>
-          <span className="text-[7px] font-mono text-[var(--text-dim)]">{qc.pendingOrdersCount} pending</span>
+          <span className="text-[8px] font-mono text-[var(--text-dim)] mt-0.5">{qc.qcCard.isOnline ? "Online" : "Offline"}</span>
+          <span className="text-[8px] font-mono text-[var(--text-dim)]">{qc.pendingOrdersCount} pending</span>
         </div>
         <div className="flex-1 p-2">
           {qc.ytCards.length > 0 ? (
@@ -81,16 +81,16 @@ function YardCard({ card, index }: { card: EquCard; index: number }) {
         <span className={`w-1.5 h-1.5 rounded-full ${card.isOnline ? "bg-[var(--green)]" : "bg-[var(--text-dim)]"}`} />
       </div>
       <div className="text-[8px] font-mono text-[var(--text-secondary)] truncate">{card.driverName ?? "No Driver"}</div>
-      <div className="flex items-center justify-between text-[7px] font-mono mt-0.5">
+      <div className="flex items-center justify-between text-[8px] font-mono mt-0.5">
         <span className={card.jobType ? "text-[var(--green)]" : "text-[var(--text-dim)]"}>{card.jobType ?? "Idle"}</span>
-        {card.assignedQc && <span className="text-[var(--amber)]">→ {card.assignedQc}</span>}
+        {card.assignedQc && <span className="text-[var(--amber)]">&rarr; {card.assignedQc}</span>}
       </div>
     </div>
   );
 }
 
 export function EquipmentMonitor({ terminalCode }: { terminalCode: string }) {
-  const { data, loading, error, lastUpdated } = usePolling<EquipmentData>(`/api/equipment?terminal=${terminalCode}`, 60000);
+  const { data, loading, error, lastUpdated, refresh } = usePolling<EquipmentData>(`/api/equipment?terminal=${terminalCode}`, 60000);
   const qcGroups = data?.qcGroups ?? [];
   const yardSections = data?.yardSections ?? [];
 
@@ -108,9 +108,10 @@ export function EquipmentMonitor({ terminalCode }: { terminalCode: string }) {
     <>
       <MonitorHeader title={`${terminalCode} Equipment Monitor`} />
       <div className="flex-1 flex items-center justify-center">
-        <div className="glass rounded-2xl px-10 py-6 text-center card-3d gradient-border">
+        <div className="glass rounded-2xl px-10 py-6 text-center card-3d">
           <div className="text-[10px] font-bold font-mono text-[var(--red)] uppercase tracking-[0.2em] mb-1">Connection Fault</div>
-          <p className="text-[11px] font-mono text-[var(--text-secondary)]">{error}</p>
+          <p className="text-[11px] font-mono text-[var(--text-secondary)] mb-3">{error}</p>
+          <button onClick={() => refresh()} className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white bg-[var(--red)] hover:opacity-80 rounded transition-all">Retry</button>
         </div>
       </div>
     </>
@@ -147,7 +148,7 @@ export function EquipmentMonitor({ terminalCode }: { terminalCode: string }) {
           ))}
           {qcGroups.length === 0 && yardSections.length === 0 && (
             <div className="flex items-center justify-center h-full">
-              <div className="glass rounded-2xl px-12 py-8 text-center card-3d gradient-border">
+              <div className="glass rounded-2xl px-12 py-8 text-center card-3d">
                 <div className="text-[10px] font-bold font-mono uppercase tracking-[0.2em] text-[var(--text-dim)] mb-1">No Equipment Data</div>
                 <p className="text-[11px] font-mono text-[var(--text-secondary)]">Waiting for fleet data.</p>
               </div>
