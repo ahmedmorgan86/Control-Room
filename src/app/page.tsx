@@ -7,6 +7,7 @@ import { VesselMonitor } from "@/components/monitors/VesselMonitor";
 import { YardMonitor } from "@/components/monitors/YardMonitor";
 import { EquipmentMonitor } from "@/components/monitors/EquipmentMonitor";
 import { YTTracker } from "@/components/monitors/YTTracker";
+import { HarborScene } from "@/components/HarborScene";
 import { SCREEN_LABELS, screenTerminal, getUserScreens } from "@/lib/screens";
 import type { ScreenKey, Terminal } from "@/lib/types";
 
@@ -51,13 +52,15 @@ function Dashboard() {
   }, []);
 
   return (
-    <div className="w-screen h-screen flex flex-col bg-mesh overflow-hidden noise-overlay">
-      <Topbar activeScreen={screen} onNavigate={setScreen} />
-      <div className="flex-1 min-h-0 flex">
+    <div className="relative w-screen h-screen flex flex-col bg-mesh overflow-hidden noise-overlay">
+      <HarborScene className="opacity-25" />
+      <div className="relative z-10 flex h-full min-h-0 flex-col">
+        <Topbar activeScreen={screen} onNavigate={setScreen} />
+        <div className="flex-1 min-h-0 flex">
         {user && screen ? (
           <ScreenContent screen={screen} />
         ) : (
-          <div className="flex-1 flex items-center justify-center bg-mesh bg-grid border-t border-white/[0.04]">
+          <div className="relative flex-1 flex items-center justify-center bg-transparent border-t border-white/[0.04]">
             <div className="glass rounded-2xl px-12 py-8 text-center card-3d-lg gradient-border animate-fade-up">
               <div className="w-10 h-10 mx-auto mb-3 rounded-xl bg-gradient-to-br from-[var(--cyan)]/20 to-[var(--blue)]/20 border border-[var(--cyan)]/20 flex items-center justify-center">
                 <svg className="w-5 h-5 text-[var(--cyan)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
@@ -69,6 +72,7 @@ function Dashboard() {
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

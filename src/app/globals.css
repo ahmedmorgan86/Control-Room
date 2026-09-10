@@ -53,6 +53,8 @@ button:disabled { cursor: not-allowed; }
 .glow-amber { box-shadow: 0 0 20px rgba(242,184,75,.14); }
 .glow-red { box-shadow: 0 0 20px rgba(251,113,133,.14); }
 .perspective-root { perspective: 1200px; perspective-origin: 50% 35%; }
+.canvas-3d { filter: saturate(1.15) contrast(1.05); }
+.scene-vignette { background: radial-gradient(ellipse at center, transparent 35%, rgba(2, 8, 15, .78) 100%); }
 .bg-mesh { background: radial-gradient(ellipse at 12% 18%, rgba(45,212,191,.045), transparent 38%), radial-gradient(ellipse at 88% 80%, rgba(249,115,22,.035), transparent 34%), var(--bg-void); }
 .bg-grid { background-image: linear-gradient(rgba(148,163,184,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,.035) 1px, transparent 1px); background-size: 48px 48px; }
 .status-dot { position: relative; }
