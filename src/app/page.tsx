@@ -52,8 +52,9 @@ function Dashboard() {
   }, []);
 
   return (
-    <div className="relative w-screen h-screen flex flex-col bg-mesh overflow-hidden noise-overlay">
-      <HarborScene className="opacity-25" />
+    <div className="relative w-screen h-screen flex flex-col bg-mesh bg-grid overflow-hidden noise-overlay">
+      <HarborScene className="opacity-40" />
+      <div className="pointer-events-none absolute inset-0 z-[1] bg-[radial-gradient(ellipse_at_center,transparent_20%,rgba(5,3,13,.72)_100%)]" />
       <div className="relative z-10 flex h-full min-h-0 flex-col">
         <Topbar activeScreen={screen} onNavigate={setScreen} />
         <div className="flex-1 min-h-0 flex">
