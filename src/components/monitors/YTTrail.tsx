@@ -4,49 +4,10 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import MonitorHeader from "@/components/MonitorHeader";
 import type { YTPosition } from "@/lib/types";
 
-function useYTPositions(terminalCode: string) {
-  const [positions, setPositions] = useState<YTPosition[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+const TRAIL_LENGTH = 20;
 
-  const fetchData = useCallback(async () => {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
-    try {
-      const res = await fetch(
-        `/api/yt-tracking?terminal=${terminalCode}&t=${Date.now()}`,
-        { signal: controller.signal },
-      );
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.details || `HTTP ${res.status}`);
-      }
-      const data = await res.json();
-      setPositions(data);
-      setError(null);
-      setLastUpdated(new Date());
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to fetch YT tracking data";
-      setError(
-        (err as Error)?.name === "AbortError"
-          ? "YT tracking request timed out"
-          : message,
-      );
-    } finally {
-      clearTimeout(timeout);
-    }
-  }, [terminalCode]);
-
-  useEffect(() => {
-    const timeout = setTimeout(fetchData, 0);
-    const interval = setInterval(fetchData, 5000);
-    return () => {
-      clearTimeout(timeout);
-      clearInterval(interval);
-    };
-  }, [fetchData]);
-
-  return { positions, error, lastUpdated };
+interface YTWithTrail extends YTPosition {
+  trail: { x: number; z: number }[];
 }
 
 function headingToArrow(heading: number): string {
@@ -62,17 +23,61 @@ function statusColor(status: string): string {
   return "var(--accent-discharge)";
 }
 
-export default function YTTracker({
-  terminalCode,
-}: {
-  terminalCode: string;
-}) {
+function useYTPositionsWithTrail(terminalCode: string) {
+  const [positions, setPositions] = useState<YTWithTrail[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const prevPositions = useRef<Map<string, { x: number; z: number }>>(new Map());
+  const positionsRef = useRef<YTWithTrail[]>([]);
+
+  const fetchData = useCallback(async () => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+    try {
+      const res = await fetch(
+        `/api/yt-tracking?terminal=${terminalCode}&t=${Date.now()}`,
+        { signal: controller.signal },
+      );
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.details || `HTTP ${res.status}`);
+      }
+      const data: YTPosition[] = await res.json();
+      const updated = data.map((pos) => {
+        const prev = prevPositions.current.get(pos.equNo);
+        const prevTrail = positionsRef.current.find((p) => p.equNo === pos.equNo)?.trail || [];
+        const newTrail = [...prevTrail, { x: pos.x, z: pos.z }].slice(-TRAIL_LENGTH);
+        prevPositions.current.set(pos.equNo, { x: pos.x, z: pos.z });
+        return { ...pos, trail: newTrail };
+      });
+      positionsRef.current = updated;
+      setPositions(updated);
+      setError(null);
+      setLastUpdated(new Date());
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to fetch";
+      setError((err as Error)?.name === "AbortError" ? "Request timed out" : message);
+    } finally {
+      clearTimeout(timeout);
+    }
+  }, [terminalCode]);
+
+  useEffect(() => {
+    fetchData();
+    const interval = setInterval(fetchData, 5000);
+    return () => clearInterval(interval);
+  }, [fetchData]);
+
+  return { positions, error, lastUpdated };
+}
+
+export default function YTTrail({ terminalCode }: { terminalCode: string }) {
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
   const dragStart = useRef({ x: 0, y: 0, ox: 0, oy: 0 });
 
-  const { positions, error: trackingError, lastUpdated } = useYTPositions(terminalCode);
+  const { positions, error: trackingError, lastUpdated } = useYTPositionsWithTrail(terminalCode);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
@@ -83,7 +88,7 @@ export default function YTTracker({
     if (e.button !== 0) return;
     setDragging(true);
     dragStart.current = { x: e.clientX, y: e.clientY, ox: offset.x, oy: offset.y };
-  }, [offset]);
+  }, [offset.x, offset.y]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!dragging) return;
@@ -96,43 +101,24 @@ export default function YTTracker({
   const handleMouseUp = useCallback(() => setDragging(false), []);
 
   const maxX = positions.length > 0 ? Math.max(...positions.map((p) => p.x)) : 1000;
-  const maxY = positions.length > 0 ? Math.max(...positions.map((p) => p.z)) : 600;
+  const maxZ = positions.length > 0 ? Math.max(...positions.map((p) => p.z)) : 600;
   const svgW = Math.max(maxX * 1.1, 800);
-  const svgH = Math.max(maxY * 1.1, 500);
+  const svgH = Math.max(maxZ * 1.1, 500);
 
   return (
     <div className="h-full w-full flex flex-col overflow-hidden bg-[var(--bg-page)]">
       <MonitorHeader
-        title={`${terminalCode} YT Tracker`}
+        title={`${terminalCode} YT Trail`}
         stats={`${positions.length} YT${positions.length === 1 ? "" : "s"} Tracked`}
         lastUpdated={lastUpdated}
         error={trackingError}
       />
-
-      {/* Zoom controls */}
       <div className="flex items-center justify-center gap-2 py-1 bg-[var(--bg-panel)] border-b border-[var(--border)] shrink-0">
-        <button
-          onClick={() => setScale((s) => Math.min(3, s + 0.2))}
-          className="px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider rounded text-[var(--text-secondary)] hover:bg-[var(--bg-nav-hover)] transition-colors"
-        >
-          Zoom +
-        </button>
+        <button onClick={() => setScale((s) => Math.min(3, s + 0.2))} className="px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider rounded text-[var(--text-secondary)] hover:bg-[var(--bg-nav-hover)]">Zoom +</button>
         <span className="text-[10px] font-mono text-[var(--text-tertiary)]">{Math.round(scale * 100)}%</span>
-        <button
-          onClick={() => setScale((s) => Math.max(0.3, s - 0.2))}
-          className="px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider rounded text-[var(--text-secondary)] hover:bg-[var(--bg-nav-hover)] transition-colors"
-        >
-          Zoom -
-        </button>
-        <button
-          onClick={() => { setScale(1); setOffset({ x: 0, y: 0 }); }}
-          className="px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider rounded text-[var(--text-secondary)] hover:bg-[var(--bg-nav-hover)] transition-colors"
-        >
-          Reset
-        </button>
+        <button onClick={() => setScale((s) => Math.max(0.3, s - 0.2))} className="px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider rounded text-[var(--text-secondary)] hover:bg-[var(--bg-nav-hover)]">Zoom -</button>
+        <button onClick={() => { setScale(1); setOffset({ x: 0, y: 0 }); }} className="px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider rounded text-[var(--text-secondary)] hover:bg-[var(--bg-nav-hover)]">Reset</button>
       </div>
-
-      {/* Map area */}
       <div
         className="flex-1 min-h-0 relative overflow-hidden cursor-grab active:cursor-grabbing"
         onWheel={handleWheel}
@@ -150,43 +136,48 @@ export default function YTTracker({
             transition: dragging ? "none" : "transform 0.1s ease-out",
           }}
         >
-          {/* Grid */}
           <svg width={svgW} height={svgH} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
             <defs>
-              <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
+              <pattern id="grid-trail" width="60" height="60" patternUnits="userSpaceOnUse">
                 <path d="M 60 0 L 0 0 0 60" fill="none" stroke="var(--border-light)" strokeWidth="0.5" />
               </pattern>
             </defs>
-            <rect width="100%" height="100%" fill="url(#grid)" />
-
-            {/* YT markers */}
+            <rect width="100%" height="100%" fill="url(#grid-trail)" />
             {positions.map((pos) => (
-              <g key={pos.equNo} transform={`translate(${pos.x}, ${pos.z})`}>
-                {/* Glow */}
-                <circle r="18" fill={statusColor(pos.status)} opacity="0.15" />
-                {/* Box */}
+              <g key={pos.equNo}>
+                {pos.trail.length > 1 && (
+                  <polyline
+                    points={pos.trail.map((t) => `${t.x},${t.z}`).join(" ")}
+                    fill="none"
+                    stroke={statusColor(pos.status)}
+                    strokeWidth="1.5"
+                    opacity="0.4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                )}
+                <circle cx={pos.x} cy={pos.z} r="18" fill={statusColor(pos.status)} opacity="0.15" />
                 <rect
-                  x="-10" y="-6" width="20" height="12" rx="3"
+                  x={pos.x - 10} y={pos.z - 6} width="20" height="12" rx="3"
                   fill={statusColor(pos.status)}
                   stroke="var(--bg-vessel-viz)"
                   strokeWidth="1.5"
                   opacity="0.9"
                 />
-                {/* Arrow */}
                 <text
+                  x={pos.x} y={pos.z}
                   textAnchor="middle"
                   dominantBaseline="central"
                   fill="white"
                   fontSize="8"
                   fontWeight="bold"
                   fontFamily="monospace"
-                  transform={`rotate(${pos.heading})`}
+                  transform={`rotate(${pos.heading} ${pos.x} ${pos.z})`}
                 >
                   {headingToArrow(pos.heading)}
                 </text>
-                {/* Label */}
                 <text
-                  y="16"
+                  x={pos.x} y={pos.z + 16}
                   textAnchor="middle"
                   fill="var(--text-tertiary)"
                   fontSize="7"
@@ -199,8 +190,6 @@ export default function YTTracker({
             ))}
           </svg>
         </div>
-
-        {/* Legend */}
         <div className="absolute bottom-4 left-4 flex items-center gap-4 bg-[var(--bg-panel)]/90 backdrop-blur-sm border border-[var(--border)] rounded-lg px-4 py-2">
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded" style={{ background: "var(--accent-load)" }} />
@@ -213,6 +202,10 @@ export default function YTTracker({
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded" style={{ background: "var(--accent-discharge)" }} />
             <span className="text-[10px] font-mono font-bold text-[var(--text-secondary)]">Stopped</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-8 h-0.5 rounded" style={{ background: "var(--accent-load)", opacity: 0.4 }} />
+            <span className="text-[10px] font-mono font-bold text-[var(--text-secondary)]">Trail</span>
           </div>
         </div>
       </div>

@@ -1,23 +1,21 @@
-const BACKEND =
-  process.env.BACKEND_URL ?? "http://172.16.20.249:3000";
+const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8080";
 
-async function proxy(
+export async function backendFetch<T>(
   path: string,
-  init?: RequestInit,
-  serverHeaders?: Headers,
-): Promise<Response> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
-  serverHeaders?.forEach((v, k) => {
-    if (k.toLowerCase() === "cookie") headers["cookie"] = v;
+  options?: RequestInit,
+): Promise<T> {
+  const res = await fetch(`${BACKEND_URL}${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options?.headers,
+    },
   });
-  const res = await fetch(`${BACKEND}${path}`, {
-    ...init,
-    headers: { ...headers, ...(init?.headers as Record<string, string>) },
-    cache: "no-store",
-  });
-  return res;
-}
 
-export { BACKEND, proxy };
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.details || body.error || `HTTP ${res.status}`);
+  }
+
+  return res.json();
+}

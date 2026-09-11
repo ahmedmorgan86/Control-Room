@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 190" fill="none">
+  <!-- Ship hull -->
+  <path d="M10 160 L60 80 L80 80 L80 60 L95 60 L95 80 L400 80 L420 100 L490 100 L500 110 L500 140 L490 150 L10 150 Z" fill="#1a1a2e"/>
+  <!-- Water line -->
+  <rect x="10" y="150" width="490" height="10" rx="2" fill="#1a1a2e"/>
+  <!-- Bridge -->
+  <rect x="30" y="90" width="45" height="50" fill="#1a1a2e"/>
+  <rect x="35" y="95" width="8" height="8" fill="#e8e8e8"/>
+  <rect x="47" y="95" width="8" height="8" fill="#e8e8e8"/>
+  <rect x="59" y="95" width="8" height="8" fill="#e8e8e8"/>
+  <rect x="35" y="108" width="8" height="8" fill="#e8e8e8"/>
+  <rect x="47" y="108" width="8" height="8" fill="#e8e8e8"/>
+  <rect x="59" y="108" width="8" height="8" fill="#e8e8e8"/>
+  <!-- Containers on ship -->
+  <rect x="110" y="110" width="55" height="35" rx="2" fill="#ef4444"/>
+  <rect x="175" y="110" width="55" height="35" rx="2" fill="#16a34a"/>
+  <rect x="240" y="110" width="55" height="35" rx="2" fill="#2563eb"/>
+  <!-- Crane base -->
+  <rect x="340" y="60" width="30" height="20" fill="#1a1a2e"/>
+  <!-- Crane mast -->
+  <rect x="352" y="15" width="6" height="45" fill="#1a1a2e"/>
+  <!-- Crane arm -->
+  <rect x="300" y="18" width="160" height="5" fill="#1a1a2e"/>
+  <!-- Crane support beams -->
+  <line x1="355" y1="20" x2="330" y2="58" stroke="#1a1a2e" stroke-width="4"/>
+  <line x1="355" y1="20" x2="380" y2="58" stroke="#1a1a2e" stroke-width="4"/>
+  <line x1="370" y1="20" x2="420" y2="58" stroke="#1a1a2e" stroke-width="3"/>
+  <line x1="390" y1="20" x2="440" y2="58" stroke="#1a1a2e" stroke-width="3"/>
+  <!-- Crane trolley -->
+  <rect x="420" y="23" width="25" height="15" fill="#1a1a2e"/>
+  <!-- Crane cable -->
+  <line x1="432" y1="38" x2="432" y2="60" stroke="#1a1a2e" stroke-width="2"/>
+  <!-- Container being lifted -->
+  <rect x="415" y="60" width="35" height="28" rx="2" fill="#ec4899"/>
+  <!-- Truck -->
+  <rect x="410" y="92" width="40" height="8" rx="2" fill="#92400e"/>
+  <rect x="415" y="85" width="15" height="8" rx="1" fill="#92400e"/>
+  <circle cx="420" cy="102" r="4" fill="#1a1a2e"/>
+  <circle cx="442" cy="102" r="4" fill="#1a1a2e"/>
+</svg>

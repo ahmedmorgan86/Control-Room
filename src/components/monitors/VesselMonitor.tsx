@@ -1,238 +1,333 @@
 "use client";
 
-import { useMemo } from "react";
-import type { Vessel, Crane } from "@/lib/types";
-import { usePolling } from "@/lib/usePolling";
-import { formatArrival, formatCount } from "@/lib/ui";
-import { useMouseTilt } from "@/lib/useMouseTilt";
-import { QC_COLORS } from "@/lib/qcColors";
-import { MonitorHeader } from "@/components/MonitorHeader";
+import { useEffect, useMemo, useRef } from "react";
+import MonitorHeader from "@/components/MonitorHeader";
+import { useMonitorData } from "@/lib/useMonitorData";
+import type { VesselData, CraneData } from "@/lib/types";
 
-function compareCranes(a: { layoutRank: number; craneId: string }, b: { layoutRank: number; craneId: string }) {
-  return a.layoutRank - b.layoutRank || a.craneId.localeCompare(b.craneId);
-}
-
-function ShipSVG({ vesselName, cranes }: { vesselName: string; cranes: Crane[] }) {
-  const active = useMemo(() => cranes.filter((c) => c.movesDone < c.movesTotal).sort(compareCranes), [cranes]);
+function LoadingSpinner() {
   return (
-    <div className="relative w-full h-full bg-gradient-to-b from-[var(--bg-void)] to-[var(--bg-deep)] rounded-lg overflow-hidden flex items-center justify-center">
-      <svg viewBox="0 0 800 300" className="w-full h-auto max-h-full" preserveAspectRatio="xMidYMid meet">
-        <defs>
-          <linearGradient id={`hull-${vesselName}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--bg-elevated, #1a2332)" />
-            <stop offset="100%" stopColor="var(--bg-surface)" />
-          </linearGradient>
-          <linearGradient id={`crane-${vesselName}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--amber)" />
-            <stop offset="100%" stopColor="#d97706" />
-          </linearGradient>
-        </defs>
-        <rect fill="var(--blue)" opacity="0.06" width="800" height="60" y="255" />
-        <line stroke="var(--amber)" strokeDasharray="10 5" strokeWidth="1.5" x1="0" x2="800" y1="248" y2="248" />
-        <path d="M 70,245 L 710,245 C 730,245 745,235 748,220 L 743,200 L 95,200 C 80,200 72,210 72,220 Z" fill={`url(#hull-${vesselName})`} stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
-        <path d="M 72,245 L 743,245 L 738,260 L 77,260 Z" fill="#991b1b" opacity="0.7" />
-        <line stroke="var(--red)" strokeWidth="1.5" x1="72" x2="743" y1="245" y2="245" />
-        <rect fill="var(--text-bright)" height="55" rx="3" stroke="var(--text-dim)" strokeWidth="0.8" width="55" x="665" y="145" />
-        <rect fill="var(--blue)" height="6" opacity="0.7" rx="1" width="50" x="668" y="150" />
-        <rect fill="var(--bg-void)" height="28" rx="2" stroke="rgba(255,255,255,0.1)" strokeWidth="0.8" width="18" x="687" y="115" />
-        {[0,1,2,3,4,5,6,7,8,9,10].map((bay) => {
-          const x = 130 + bay * 47;
-          const tiers = 2 + (bay % 3);
-          const cols = ["var(--red)", "var(--green)", "var(--blue)", "var(--orange)", "var(--cyan)"];
-          return Array.from({ length: tiers }).map((_, t) => (
-            <rect key={`${bay}-${t}`} fill={cols[(bay+t)%cols.length]} height="9" width="38" x={x} y={200 - t * 9} stroke="rgba(0,0,0,0.4)" strokeWidth="0.5" rx="1" />
-          ));
-        })}
-        <text x="400" y="135" textAnchor="middle" fontSize="15" fontFamily="Inter, sans-serif" fill="var(--text-bright)" fontWeight="600" letterSpacing="3">
-          {vesselName}
-        </text>
-        {active.slice(0,4).map((crane, idx) => {
-          const x = 190 + idx * 145;
-          const color = QC_COLORS[crane.craneId] ?? "var(--cyan)";
-          return (
-            <g key={crane.craneId}>
-              <path d={`M ${x-10},260 L ${x-5},140 L ${x+5},140 L ${x+10},260`} fill={`url(#crane-${vesselName})`} stroke="#92400e" strokeWidth="0.8" />
-              <path d={`M ${x+26},260 L ${x+31},140 L ${x+41},140`} fill={`url(#crane-${vesselName})`} stroke="#92400e" strokeWidth="0.8" />
-              <line stroke="var(--amber)" strokeWidth="3" x1={x-28} x2={x+48} y1="140" y2="140" />
-              <text x={x+10} y="128" textAnchor="middle" fontSize="8" fontFamily="JetBrains Mono, monospace" fill={color} fontWeight="bold">{crane.craneId}</text>
-            </g>
-          );
-        })}
-      </svg>
+    <div className="flex flex-col items-center justify-center h-full text-[var(--text-tertiary)]">
+      <div className="w-8 h-8 border-2 border-[var(--border)] border-t-[var(--accent-blue)] rounded-full animate-spin mb-3" />
+      <p className="text-xs font-mono uppercase tracking-widest">
+        Connecting to Terminal Database
+      </p>
     </div>
   );
 }
 
-function CraneTable({ cranes }: { cranes: Crane[] }) {
-  const sorted = useMemo(() => [...cranes].sort(compareCranes), [cranes]);
+function ErrorView({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: () => void;
+}) {
   return (
-    <div className="bg-[var(--bg-deep)] border-t border-white/[0.04]">
-      <table className="w-full text-[10px] font-mono">
-        <thead>
-          <tr className="text-[var(--text-dim)] text-[9px] uppercase tracking-wider text-left border-b border-white/[0.04]">
-            <th className="px-3 py-1 font-semibold">Crane</th>
-            <th className="px-3 py-1 font-semibold">Progress</th>
-            <th className="px-3 py-1 font-semibold text-right">Load</th>
-            <th className="px-3 py-1 font-semibold text-right">Disch</th>
-            <th className="px-3 py-1 font-semibold text-right">MPH</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sorted.map((c) => {
-            const color = QC_COLORS[c.craneId] ?? "var(--cyan)";
-            const pct = c.movesTotal > 0 ? Math.round((c.movesDone / c.movesTotal) * 100) : 0;
-            const done = c.movesDone >= c.movesTotal;
+    <div className="flex flex-col items-center justify-center h-full">
+      <div className="border border-[var(--accent-discharge)] bg-red-50 px-8 py-6 text-center max-w-md">
+        <div className="text-xs font-bold font-mono text-[var(--accent-discharge)] uppercase tracking-widest mb-2">
+          Connection Fault
+        </div>
+        <p className="text-[11px] font-mono text-[var(--text-secondary)] mb-4">
+          {message}
+        </p>
+        <button
+          onClick={onRetry}
+          className="px-4 py-1.5 text-[11px] font-mono font-bold uppercase tracking-wider text-white bg-[var(--accent-discharge)] hover:opacity-90 transition-opacity"
+        >
+          Retry
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function EmptyView() {
+  return (
+    <div className="flex flex-col items-center justify-center h-full text-[var(--text-tertiary)]">
+      <div className="border border-[var(--border)] px-12 py-8 text-center">
+        <div className="text-xs font-bold font-mono uppercase tracking-widest mb-2">
+          No Vessel Data
+        </div>
+        <p className="text-[11px] font-mono text-[var(--text-tertiary)]">
+          Waiting for GC order data.
+          <br />
+          Display will update automatically.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function sortCranes(a: CraneData, b: CraneData) {
+  return (
+    a.layoutRank - b.layoutRank || a.craneId.localeCompare(b.craneId)
+  );
+}
+
+function VesselVisualization({
+  vessel,
+  duplicateCraneIds,
+}: {
+  vessel: VesselData;
+  duplicateCraneIds: Set<string>;
+}) {
+  const activeCranes = vessel.cranes
+    .filter((c) => c.movesDone < c.movesTotal)
+    .sort(sortCranes);
+  const tickRef = useRef(0);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const frameRef = useRef<number>(0);
+
+  useEffect(() => {
+    const animate = () => {
+      tickRef.current += 0.002;
+      const paths = svgRef.current?.querySelectorAll("[data-wave]");
+      paths?.forEach((path) => {
+        const el = path as SVGPathElement;
+        const y = parseFloat(el.getAttribute("data-y") || "50");
+        const freq = parseFloat(el.getAttribute("data-freq") || "0.3");
+        const amp = parseFloat(el.getAttribute("data-amp") || "5");
+        const speed = parseFloat(el.getAttribute("data-speed") || "0.5");
+        const points: string[] = [];
+        for (let x = 0; x <= 60; x++) {
+          const xPos = (x / 60) * 150;
+          const yVal = y + Math.sin(x * freq + tickRef.current * speed) * amp + Math.sin(x * 1.8 * freq + 1.3 * tickRef.current * speed) * 0.4 * amp;
+          points.push(`${xPos},${yVal}`);
+        }
+        el.setAttribute("d", `M 0,100 L 0,${y} ${points.map((p) => `L ${p}`).join(" ")} L 150,${y} L 150,100 Z`);
+      });
+      frameRef.current = requestAnimationFrame(animate);
+    };
+    frameRef.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frameRef.current);
+  }, []);
+
+  const waves = [
+    { phase: 0.3, freq: 0.4, amp: 3, y: 20, op: 0.25, color: "var(--wave-1)", speed: 0.3 },
+    { phase: -0.5, freq: 0.2, amp: 6, y: 26, op: 0.3, color: "var(--wave-2)", speed: -0.4 },
+    { phase: 0.8, freq: 0.3, amp: 4, y: 32, op: 0.35, color: "var(--wave-3)", speed: 0.6 },
+    { phase: -0.2, freq: 0.15, amp: 8, y: 38, op: 0.4, color: "var(--wave-4)", speed: -0.2 },
+    { phase: 1.1, freq: 0.5, amp: 2, y: 44, op: 0.5, color: "var(--wave-5)", speed: 0.9 },
+    { phase: -0.7, freq: 0.25, amp: 7, y: 50, op: 0.55, color: "var(--wave-6)", speed: -0.7 },
+    { phase: 0.4, freq: 0.35, amp: 4, y: 56, op: 0.6, color: "var(--wave-7)", speed: 0.5 },
+    { phase: -1.2, freq: 0.45, amp: 3, y: 62, op: 0.65, color: "var(--wave-8)", speed: -1.1 },
+    { phase: 0.6, freq: 0.18, amp: 9, y: 68, op: 0.7, color: "var(--wave-6)", speed: 0.3 },
+    { phase: -0.4, freq: 0.4, amp: 4, y: 74, op: 0.75, color: "var(--wave-7)", speed: -0.8 },
+    { phase: 0.2, freq: 0.22, amp: 6, y: 80, op: 0.85, color: "var(--wave-8)", speed: 0.4 },
+    { phase: -0.8, freq: 0.3, amp: 5, y: 88, op: 1.0, color: "var(--wave-8)", speed: -1.2 },
+  ];
+
+  const craneSpacing = 150 / (activeCranes.length + 1);
+
+  return (
+    <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden bg-[var(--bg-vessel-viz)]">
+      {/* Waves - back layer (distant, lighter) */}
+      <div className="absolute bottom-0 left-0 z-0 pointer-events-none" style={{ width: "100%", height: "65%" }}>
+        <svg ref={svgRef} className="w-full h-full" viewBox="0 0 150 100" preserveAspectRatio="none">
+          {waves.slice(0, 4).map((w, i) => (
+            <path
+              key={i}
+              data-wave
+              data-y={w.y}
+              data-freq={w.freq}
+              data-amp={w.amp}
+              data-speed={w.speed}
+              d={`M 0,100 L 0,${w.y} L 150,${w.y} L 150,100 Z`}
+              fill={w.color}
+              opacity={w.op}
+            />
+          ))}
+        </svg>
+      </div>
+      {/* Waves - front layer (closer, more opaque) */}
+      <div className="absolute bottom-0 left-0 z-25 pointer-events-none opacity-95" style={{ width: "100%", height: "65%" }}>
+        <svg className="w-full h-full" viewBox="0 0 150 100" preserveAspectRatio="none">
+          {waves.slice(4).map((w, i) => (
+            <path
+              key={i}
+              data-wave
+              data-y={w.y}
+              data-freq={w.freq}
+              data-amp={w.amp}
+              data-speed={w.speed}
+              d={`M 0,100 L 0,${w.y} L 150,${w.y} L 150,100 Z`}
+              fill={w.color}
+              opacity={w.op}
+            />
+          ))}
+        </svg>
+      </div>
+
+      {/* Vessel SVG */}
+      <div className="relative w-full max-w-5xl aspect-video">
+        <svg viewBox="0 0 1200 400" className="absolute inset-0 z-10 w-full h-full" preserveAspectRatio="xMidYMid meet">
+
+          {/* Ship hull */}
+          <path d="M 50 320 L 200 180 L 250 180 L 250 140 L 300 140 L 300 180 L 1050 180 L 1100 220 L 1160 220 L 1180 250 L 1180 300 L 1160 320 Z" fill="#1a1a2e" opacity="0.9" />
+          <rect x="50" y="320" width="1130" height="15" rx="3" fill="#1a1a2e" />
+
+          {/* Bridge */}
+          <rect x="80" y="200" width="80" height="120" fill="#1a1a2e" opacity="0.85" />
+          <rect x="90" y="210" width="12" height="12" fill="#e8e8e8" opacity="0.6" />
+          <rect x="108" y="210" width="12" height="12" fill="#e8e8e8" opacity="0.6" />
+          <rect x="126" y="210" width="12" height="12" fill="#e8e8e8" opacity="0.6" />
+          <rect x="90" y="228" width="12" height="12" fill="#e8e8e8" opacity="0.6" />
+          <rect x="108" y="228" width="12" height="12" fill="#e8e8e8" opacity="0.6" />
+          <rect x="126" y="228" width="12" height="12" fill="#e8e8e8" opacity="0.6" />
+
+          {/* Cranes on vessel */}
+          {activeCranes.map((crane, i) => {
+            const cx = 350 + i * craneSpacing;
+            const isConflict = duplicateCraneIds.has(crane.craneId);
+            const progress = crane.movesTotal > 0 ? crane.movesDone / crane.movesTotal : 0;
             return (
-              <tr key={c.craneId} className={`border-b border-white/[0.03] ${done ? "opacity-40" : ""}`}>
-                <td className="px-3 py-1"><span className="font-bold" style={{ color }}>{c.craneId}</span></td>
-                <td className="px-3 py-1">
-                  <div className="flex items-center gap-2">
-                    <div className="w-14 h-1 bg-white/[0.06] rounded-full overflow-hidden">
-                      <div className="h-full rounded-full progress-glow" style={{ width: `${pct}%`, backgroundColor: color }} />
-                    </div>
-                    <span className="text-[var(--text-secondary)] tabular-nums whitespace-nowrap">{c.movesDone}/{c.movesTotal}</span>
-                    <span className="font-bold tabular-nums" style={{ color }}>{pct}%</span>
-                  </div>
-                </td>
-                <td className="px-3 py-1 text-right tabular-nums">{c.loadingDone}<span className="text-[var(--text-dim)]">/{c.loadingTotal}</span></td>
-                <td className="px-3 py-1 text-right tabular-nums">{c.dischargingDone}<span className="text-[var(--text-dim)]">/{c.dischargingTotal}</span></td>
-                <td className="px-3 py-1 text-right">
-                  <span className="tabular-nums font-bold" style={{ color: c.mph >= 25 ? "var(--green)" : c.mph >= 15 ? color : c.mph > 0 ? "var(--amber)" : "var(--text-dim)" }}>{c.mph}</span>
-                </td>
-              </tr>
+              <g key={crane.craneId} className={isConflict ? "qc-conflict-box" : ""}>
+                {isConflict && <circle cx={cx} cy={160} r={22} fill="none" stroke="#F59E0B" strokeWidth={2} className="qc-conflict-ring" />}
+                {/* Crane mast */}
+                <rect x={cx - 3} y={80} width={6} height={100} fill="#eab308" opacity="0.9" />
+                {/* Crane arm */}
+                <rect x={cx - 40} y={82} width={80} height={4} fill="#eab308" opacity="0.9" />
+                {/* Crane base */}
+                <rect x={cx - 8} y={175} width={16} height={8} fill="#eab308" opacity="0.9" />
+                {/* Crane label */}
+                <text x={cx} y={72} textAnchor="middle" fill="var(--text-primary)" fontSize="10" fontFamily="var(--font-mono)" fontWeight="bold">{crane.craneId}</text>
+                {/* Progress indicator */}
+                <rect x={cx - 12} y={188} width={24} height={3} rx={1.5} fill="var(--bg-progress)" />
+                <rect x={cx - 12} y={188} width={24 * progress} height={3} rx={1.5} fill="var(--accent-blue)" />
+              </g>
             );
           })}
-        </tbody>
-      </table>
+
+          {/* Container placeholders */}
+          <rect x="350" y="250" width="50" height="30" rx="2" fill="#ef4444" opacity="0.8" />
+          <rect x="410" y="250" width="50" height="30" rx="2" fill="#16a34a" opacity="0.8" />
+          <rect x="470" y="250" width="50" height="30" rx="2" fill="#2563eb" opacity="0.8" />
+          <rect x="530" y="250" width="50" height="30" rx="2" fill="#ea580c" opacity="0.8" />
+
+          {/* Vessel name */}
+          <text x="600" y="165" textAnchor="middle" fill="var(--text-bright)" fontSize="16" fontFamily="var(--font-mono)" fontWeight="bold" letterSpacing="2">
+            {vessel.vesselCode}
+          </text>
+        </svg>
+      </div>
     </div>
   );
 }
 
-function VesselCard({ vessel, index }: { vessel: Vessel; index: number }) {
-  const pct = vessel.totalMoves > 0 ? Math.min(100, Math.round((vessel.totalDone / vessel.totalMoves) * 100)) : 0;
-  const t = useMouseTilt(5);
-  const delay = `d${(index % 12) + 1}`;
+function VesselCard({
+  vessel,
+  duplicateCraneIds,
+}: {
+  vessel: VesselData;
+  duplicateCraneIds: Set<string>;
+}) {
+  const activeCranes = vessel.cranes
+    .filter((c) => c.movesDone < c.movesTotal)
+    .sort(sortCranes);
 
   return (
-    <div
-      ref={t.ref} onMouseMove={t.onMove} onMouseLeave={t.onLeave}
-      className={`card-3d-lg flex flex-col h-full bg-[var(--bg-surface)] border border-white/[0.06] rounded-2xl overflow-hidden animate-fade-up ${delay}`}
-      style={t.style}
-    >
-      {/* Header */}
-      <div className="px-4 py-2.5 border-b border-white/[0.04]">
-        <div className="flex items-center justify-between">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[var(--green)] status-dot" style={{ color: "var(--green)" }} />
-              <span className="text-sm font-bold text-[var(--text-bright)] uppercase tracking-wide truncate">{vessel.vesselName}</span>
-            </div>
-            <div className="flex items-center gap-2 mt-0.5 text-[9px] font-mono text-[var(--text-secondary)]">
-              <span>VOY {vessel.voyageNumber}</span>
-              <span className="text-white/[0.1]">|</span>
-              <span>ARR {formatArrival(vessel.arrivalTime)}</span>
-              <span className="text-white/[0.1]">|</span>
-              <span className="text-[var(--amber)] font-bold">QC {vessel.cranes.length}</span>
-            </div>
-          </div>
-          <div className="w-11 h-11 bg-gradient-to-br from-[var(--cyan)]/10 to-[var(--blue)]/10 rounded-xl flex flex-col items-center justify-center shrink-0 ml-2 border border-[var(--cyan)]/20 animate-breathe">
-            <span className="text-[8px] font-mono font-bold uppercase tracking-[0.15em] text-[var(--text-dim)]">GMPH</span>
-            <span className="text-base font-mono font-black text-[var(--cyan)] leading-none tabular-nums">{vessel.gmph}</span>
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div className="flex items-center gap-3 mt-1.5 text-[9px] font-mono">
-          <div className="flex items-center gap-1">
-            <span className="text-[var(--green)]">&#9650;</span>
-            <span className="text-[var(--text-dim)]">LOAD</span>
-            <span className="font-bold text-[var(--green)]">{formatCount(vessel.loadingDone)}</span>
-            <span className="text-[var(--text-dim)]">/{formatCount(vessel.loadingTotal)}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="text-[var(--amber)]">&#9660;</span>
-            <span className="text-[var(--text-dim)]">DISCH</span>
-            <span className="font-bold text-[var(--amber)]">{formatCount(vessel.dischargingDone)}</span>
-            <span className="text-[var(--text-dim)]">/{formatCount(vessel.dischargingTotal)}</span>
-          </div>
-          <div className="flex items-center gap-1 ml-auto">
-            <span className="text-[var(--text-dim)]">TOTAL</span>
-            <span className="font-bold text-[var(--text-bright)]">{formatCount(vessel.totalDone)}</span>
-            <span className="text-[var(--text-dim)]">/{formatCount(vessel.totalMoves)}</span>
-          </div>
-        </div>
-
-        {/* Progress */}
-        <div className="mt-1.5">
-          <div className="relative h-1 w-full rounded-full overflow-hidden bg-white/[0.06]">
-            <div className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[var(--cyan)] to-[var(--blue)] transition-all duration-700 progress-glow" style={{ width: `${pct}%` }} />
-          </div>
-          <div className="flex justify-between text-[8px] font-mono text-[var(--text-dim)] mt-0.5">
-            <span>PROGRESS</span>
-            <span className="font-bold text-[var(--cyan)]">{pct}%</span>
-          </div>
-        </div>
+    <div className="flex-1 min-w-0 border border-[var(--border)] rounded-lg overflow-hidden bg-[var(--bg-panel)] flex flex-col">
+      <div className="flex items-center justify-between px-[clamp(8px,1.2vh,16px)] py-[clamp(4px,0.5vh,8px)] bg-[var(--bg-vessel-header)] border-b border-[var(--border)]">
+        <h2 className="text-sm font-mono font-black text-[var(--text-primary)] uppercase tracking-wider">
+          {vessel.vesselCode}
+        </h2>
+        <span className="text-xs font-mono font-bold text-[var(--text-secondary)]">
+          {activeCranes.length} Crane{activeCranes.length !== 1 ? "s" : ""}
+        </span>
       </div>
-
-      {/* Ship */}
-      <div className="flex-1 min-h-0" style={{ minHeight: "100px" }}>
-        <ShipSVG vesselName={vessel.vesselName} cranes={vessel.cranes} />
+      <div className="flex-1 min-h-0">
+        <VesselVisualization vessel={vessel} duplicateCraneIds={duplicateCraneIds} />
       </div>
-
-      {/* Table */}
-      <CraneTable cranes={vessel.cranes} />
+      <div className="p-[clamp(4px,0.5vh,8px)]">
+        {activeCranes.map((crane) => (
+          <div
+            key={crane.craneId}
+            className={`flex items-center justify-between px-[clamp(8px,1vh,12px)] py-[clamp(4px,0.5vh,8px)] mb-[clamp(2px,0.3vh,4px)] rounded border bg-[var(--bg-panel)] ${
+              duplicateCraneIds.has(crane.craneId) ? "border-[#F59E0B]" : "border-[var(--border)]"
+            }`}
+          >
+            <span className="text-xs font-mono font-black text-[var(--text-primary)]">
+              {crane.craneId}
+            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-mono font-bold text-[var(--text-secondary)]">
+                {crane.movesDone}/{crane.movesTotal}
+              </span>
+              <div className="w-20 h-1.5 bg-[var(--bg-progress)] rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full progress-shimmer transition-all"
+                  style={{
+                    width: `${Math.round(
+                      (crane.movesDone / Math.max(crane.movesTotal, 1)) * 100,
+                    )}%`,
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
 
-export function VesselMonitor({ terminalCode }: { terminalCode: string }) {
-  const { data: vessels, loading, error, lastUpdated, refresh } = usePolling<Vessel[]>(`/api/vessels?terminal=${terminalCode}`, 60000);
-  const count = vessels?.length ?? 0;
+export default function VesselMonitor({
+  terminalCode,
+}: {
+  terminalCode: string;
+}) {
+  const { data: vessels, loading, error, lastUpdated, refresh } = useMonitorData<VesselData[]>({
+    url: `/api/vessels?terminal=${terminalCode}`,
+    interval: 60000,
+  });
 
-  if (loading && !vessels) return (
-    <>
-      <MonitorHeader title={`${terminalCode} Vessel Monitoring`} />
-      <div className="flex-1 flex flex-col items-center justify-center">
-        <div className="w-8 h-8 border-2 border-white/[0.08] border-t-[var(--cyan)] rounded-full animate-spin mb-3" />
-        <p className="text-[10px] font-mono uppercase tracking-[0.25em] text-[var(--text-dim)]">Connecting</p>
-      </div>
-    </>
-  );
+  const vesselCount = vessels?.length || 0;
 
-  if (error && !vessels) return (
-    <>
-      <MonitorHeader title={`${terminalCode} Vessel Monitoring`} />
-      <div className="flex-1 flex items-center justify-center">
-        <div className="glass rounded-2xl px-10 py-6 text-center card-3d shadow-depth-3">
-          <div className="text-[10px] font-bold font-mono text-[var(--red)] uppercase tracking-[0.2em] mb-1">Connection Fault</div>
-          <p className="text-[11px] font-mono text-[var(--text-secondary)] mb-3">{error}</p>
-          <button onClick={() => refresh()} className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white bg-[var(--red)] hover:opacity-80 rounded transition-all">Retry</button>
-        </div>
-      </div>
-    </>
-  );
+  // Detect crane conflicts
+  const duplicateCraneIds = useMemo(() => {
+    const craneOccurrences = new Map<string, number>();
+    vessels?.forEach((v) =>
+      v.cranes.forEach((c) => {
+        if (c.movesDone === c.movesTotal && c.movesTotal > 0) return;
+        craneOccurrences.set(c.craneId, (craneOccurrences.get(c.craneId) || 0) + 1);
+      }),
+    );
+    const dupes = new Set<string>();
+    craneOccurrences.forEach((count, id) => { if (count > 1) dupes.add(id); });
+    return dupes;
+  }, [vessels]);
 
   return (
-    <>
-      <MonitorHeader title={`${terminalCode} Vessel Monitoring`} stats={<span className="text-[11px] font-mono text-[var(--text-secondary)]">{count} {count === 1 ? "Vessel" : "Vessels"}</span>} lastUpdated={lastUpdated} />
-      <main className="flex-1 min-h-0 p-3 overflow-hidden flex items-center justify-center perspective-root bg-mesh bg-grid">
-        <div className="w-full max-w-[1920px] h-full flex items-center justify-center">
-          {!vessels || vessels.length === 0 ? (
-            <div className="glass rounded-2xl px-12 py-8 text-center card-3d">
-              <div className="text-[10px] font-bold font-mono uppercase tracking-[0.2em] text-[var(--text-dim)] mb-1">No Vessel Data</div>
-              <p className="text-[11px] font-mono text-[var(--text-secondary)]">Waiting for GC order data.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full h-full items-center">
-              {vessels.map((v, i) => (
-                <div key={`${v.vesselCode}_${v.callYear}_${v.callSeq}`} className="h-full max-h-[calc(100vh-110px)] flex flex-col">
-                  <VesselCard vessel={v} index={i} />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+    <div className="h-full w-full flex flex-col overflow-hidden bg-[var(--bg-page)]">
+      <MonitorHeader
+        title={`${terminalCode} Vessel Monitoring`}
+        stats={`${vesselCount} ${vesselCount === 1 ? "Vessel" : "Vessels"}`}
+        lastUpdated={lastUpdated}
+        error={error}
+      />
+      <main className="flex-1 min-h-0 p-[clamp(4px,0.6vh,8px)]">
+        {loading && (!vessels || vessels.length === 0) ? (
+          <LoadingSpinner />
+        ) : error ? (
+          <ErrorView message={error} onRetry={refresh} />
+        ) : !vessels || vessels.length === 0 ? (
+          <EmptyView />
+        ) : (
+          <div className="flex justify-center gap-[clamp(4px,0.6vh,8px)] h-full">
+            {vessels.slice(0, 3).map((v) => (
+              <div
+                key={`${v.vesselCode}_${v.callYear}_${v.callSeq}`}
+                className="h-full flex-shrink-0"
+                style={{ width: "calc((100% - 12px) / 3)" }}
+              >
+                <VesselCard vessel={v} duplicateCraneIds={duplicateCraneIds} />
+              </div>
+            ))}
+          </div>
+        )}
       </main>
-    </>
+    </div>
   );
 }

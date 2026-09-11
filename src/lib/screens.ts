@@ -1,36 +1,22 @@
-import type { ScreenKey, Terminal, User } from "@/lib/types";
-
-export const SCREEN_LABELS: Record<ScreenKey, string> = {
-  ACT_VSL_MONITOR: "VESSEL MONITOR",
-  DCT_VSL_MONITOR: "VESSEL MONITOR",
-  ACT_EQU_MONITOR: "EQU MONITOR",
-  DCT_EQU_MONITOR: "EQU MONITOR",
-  ACT_YARD_MONITOR: "YARD MONITOR",
-  DCT_YARD_MONITOR: "YARD MONITOR",
-  ACT_YT_TRACKER: "YT TRACKER",
-  DCT_YT_TRACKER: "YT TRACKER",
-  GATE_MONITOR: "GATE MONITOR",
-  YARD_MONITOR: "YARD MONITOR",
-  BERTH_MONITOR: "BERTH MONITOR",
+export const screenLabels: Record<string, string> = {
+  ACT_VSL_MONITOR: "ACT Vessel Monitor",
+  DCT_VSL_MONITOR: "DCT Vessel Monitor",
+  ACT_EQU_MONITOR: "ACT EQU MONITOR",
+  DCT_EQU_MONITOR: "DCT EQU MONITOR",
+  ACT_YARD_MONITOR: "ACT Yard Monitor",
+  DCT_YARD_MONITOR: "DCT Yard Monitor",
+  ACT_YT_TRACKER: "ACT YT Tracker",
+  DCT_YT_TRACKER: "DCT YT Tracker",
+  ACT_DASHBOARD: "ACT Dashboard",
+  DCT_DASHBOARD: "DCT Dashboard",
+  ACT_GATE_MONITOR: "ACT Gate Monitor",
+  DCT_GATE_MONITOR: "DCT Gate Monitor",
+  ACT_BERTH_MONITOR: "ACT Berth Monitor",
+  DCT_BERTH_MONITOR: "DCT Berth Monitor",
+  ACT_HEATMAP: "ACT Yard Heatmap",
+  DCT_HEATMAP: "DCT Yard Heatmap",
+  ACT_YT_TRAIL: "ACT YT Trail",
+  DCT_YT_TRAIL: "DCT YT Trail",
+  ACT_CRANE_TREND: "ACT Crane Trend",
+  DCT_CRANE_TREND: "DCT Crane Trend",
 };
-
-export function screenTerminal(key: ScreenKey): Terminal | null {
-  const parts = key.split("_");
-  return parts[0] === "ACT" || parts[0] === "DCT" ? (parts[0] as Terminal) : null;
-}
-
-export function sortScreens(keys: ScreenKey[]): ScreenKey[] {
-  const rank = (k: ScreenKey) =>
-    k.includes("VSL") ? 0 : k.includes("EQU") ? 1 : k.includes("YARD") ? 2 : 99;
-  return [...keys].sort((a, b) => rank(a) - rank(b));
-}
-
-export function getUserScreens(user: User | null): ScreenKey[] {
-  if (!user) return [];
-  const enabled = sortScreens(
-    (Object.entries(user.screens) as [ScreenKey, boolean][])
-      .filter(([, v]) => v)
-      .map(([k]) => k),
-  );
-  return enabled;
-}

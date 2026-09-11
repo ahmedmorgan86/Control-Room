@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const res = await fetch(
-      `${BACKEND_URL}/api/yt-tracking?terminal=${terminal}&t=${Date.now()}`,
+      `${BACKEND_URL}/api/berth?terminal=${terminal}&t=${Date.now()}`,
       {
         headers,
         signal: controller.signal,

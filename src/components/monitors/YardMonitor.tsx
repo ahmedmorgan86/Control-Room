@@ -1,198 +1,591 @@
 "use client";
 
-import { useMemo } from "react";
-import type { YardData, BlockType, Violation } from "@/lib/types";
-import { usePolling } from "@/lib/usePolling";
-import { formatCount, BLOCK_COLORS } from "@/lib/ui";
-import { useMouseTilt } from "@/lib/useMouseTilt";
-import { MonitorHeader } from "@/components/MonitorHeader";
+import { Fragment } from "react";
+import MonitorHeader from "@/components/MonitorHeader";
+import { useMonitorData } from "@/lib/useMonitorData";
+import { getSeverityColor, getFillBarColor, getColumnCount } from "@/lib/ui";
+import type { YardBlock, YardDataWithViolations } from "@/lib/types";
 
-const CATS: { label: string; types: BlockType[]; color: string }[] = [
-  { label: "Special Containers", types: ["DG", "RF"], color: "var(--red)" },
-  { label: "High Traffic", types: ["IMP", "EXP", "IMP_EXP"], color: "var(--green)" },
-  { label: "Auxiliary", types: ["EMPTY", "CFS", "INSP", "NEGLECT", "OTHER"], color: "var(--text-secondary)" },
-];
+/* ─── SVG Icons ─── */
+const ReeferIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className={className}>
+    <path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93L4.93 19.07" strokeLinecap="round" />
+  </svg>
+);
+const DangerIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+    <path d="M12 2L1 21h22L12 2zm0 4l7.53 13H4.47L12 6zm-1 5v4h2v-4h-2zm0 6v2h2v-2h-2z" />
+  </svg>
+);
+const ShieldIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className={className}>
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10zM12 8v4M12 16h.01" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+const EmptyIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className={className}>
+    <rect x="3" y="3" width="18" height="18" rx="2" strokeDasharray="4 2" />
+  </svg>
+);
+const NeglectIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className={className}>
+    <circle cx="12" cy="12" r="10" />
+    <path d="M12 6v6l4 2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+const ImportIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className={className}>
+    <path d="M12 5v14M5 12l7 7 7-7" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+const ExportIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className={className}>
+    <path d="M12 19V5M5 12l7-7 7 7" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+const Container20Icon = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className={className}>
+    <rect x="7" y="7" width="10" height="10" rx="1" />
+  </svg>
+);
+const Container40Icon = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className={className}>
+    <rect x="2" y="7" width="20" height="10" rx="1" />
+    <line x1="12" y1="7" x2="12" y2="17" />
+  </svg>
+);
+const AlertIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className={className}>
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10zM12 8v4M12 16h.01" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+const CranesIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className={className}>
+    <path d="M3 21h18M9 8h1m-1 4h1m-1 4h1m5-12h1m-1 4h1m-1 4h1M3 7l9-4 9 4v14H3V7z" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
 
-function Gauge({ ratio }: { ratio: number }) {
-  const pct = Math.round(ratio * 100);
-  const C = 2 * Math.PI * 50;
-  const off = C * (1 - ratio);
-  const color = pct >= 90 ? "var(--red)" : pct >= 70 ? "var(--amber)" : "var(--green)";
-  return (
-    <div className="relative w-24 h-24 mx-auto animate-float">
-      <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90">
-        <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="7" />
-        <circle cx="60" cy="60" r="50" fill="none" stroke={color} strokeWidth="7" strokeDasharray={C} strokeDashoffset={off} strokeLinecap="round" className="transition-all duration-700" />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-lg font-mono font-black" style={{ color }}>{pct}%</span>
-        <span className="text-[8px] font-mono text-[var(--text-dim)] uppercase tracking-widest">Capacity</span>
-      </div>
-    </div>
-  );
-}
+/* ─── Block Card ─── */
+const blockStyles: Record<string, { accent: string; header: string }> = {
+  DG: { accent: "#be185d", header: "rgba(190,24,93,1)" },
+  RF: { accent: "#3b82f6", header: "rgba(59,130,246,1)" },
+  EMPTY: { accent: "#94a3b8", header: "rgba(148,163,184,1)" },
+  IMP_EXP: { accent: "#4d7c0f", header: "rgba(77,124,15,1)" },
+  IMP: { accent: "#0f766e", header: "rgba(15,118,110,1)" },
+  EXP: { accent: "#10b981", header: "rgba(16,185,129,1)" },
+  CFS: { accent: "#6366f1", header: "rgba(99,102,241,1)" },
+  INSP: { accent: "#06b6d4", header: "rgba(6,182,212,1)" },
+  NEGLECT: { accent: "#a855f7", header: "rgba(168,85,247,1)" },
+  OTHER: { accent: "#64748b", header: "rgba(100,116,139,1)" },
+};
 
-function Stat({ label, value, color }: { label: string; value: string | number; color: string }) {
-  return (
-    <div className="flex items-center justify-between py-1 border-b border-white/[0.04] last:border-0">
-      <span className="text-[9px] font-mono text-[var(--text-dim)] uppercase tracking-wider">{label}</span>
-      <span className="text-[10px] font-mono font-bold" style={{ color }}>{value}</span>
-    </div>
-  );
-}
+function YardBlockCard({
+  block,
+}: {
+  block: YardBlock;
+}) {
+  const bs = blockStyles[block.blockType] || blockStyles.OTHER;
 
-function Alert({ v, i }: { v: Violation; i: number }) {
-  const c = v.severity === "CRITICAL" ? "var(--red)" : v.severity === "HIGH" ? "var(--orange)" : v.severity === "MEDIUM" ? "var(--yellow)" : "var(--text-dim)";
-  return (
-    <div className={`flex items-start gap-1.5 py-1 border-b border-white/[0.03] last:border-0 animate-slide-up d${(i % 8) + 1}`}>
-      <span className="w-1 h-1 rounded-full mt-1 shrink-0" style={{ backgroundColor: c }} />
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5">
-          <span className="text-[8px] font-mono font-bold text-[var(--text-bright)]">{v.cntrNo}</span>
-          <span className="text-[8px] font-mono text-[var(--text-dim)]">{v.block}</span>
-        </div>
-        <p className="text-[8px] font-mono text-[var(--text-secondary)] truncate">{v.description}</p>
-      </div>
-      <span className="text-[8px] px-1 py-px rounded font-bold shrink-0" style={{ backgroundColor: `color-mix(in srgb, ${c} 12%, transparent)`, color: c }}>{v.severity}</span>
-    </div>
-  );
-}
+  const remark = (block.remark || "").toUpperCase();
+  const tags: React.ReactElement[] = [];
+  if (remark.includes("DG")) tags.push(<DangerIcon key="dg" />);
+  if (remark.includes("RF")) tags.push(<ReeferIcon key="rf" />);
+  if (remark.includes("EMPTY")) tags.push(<EmptyIcon key="empty" />);
+  if (remark.includes("CFS")) tags.push(<CranesIcon key="cfs" />);
+  if (remark.includes("INSP")) tags.push(<ShieldIcon key="insp" />);
+  if (remark.includes("NEGLECT")) tags.push(<NeglectIcon key="neglect" />);
+  if (remark.includes("IMP")) tags.push(<ImportIcon key="imp" />);
+  if (remark.includes("EXP")) tags.push(<ExportIcon key="exp" />);
 
-function Block({ b, i }: { b: YardData["blocks"][0]; i: number }) {
-  const pct = Math.round(b.fillRatio * 100);
-  const color = pct >= 90 ? "var(--red)" : pct >= 70 ? "var(--amber)" : "var(--green)";
-  const t = useMouseTilt(3);
+  const sevColor = getSeverityColor(block.maxSeverity);
+  const pct = Math.round(block.fillRatio * 100);
+  const barWidth = Math.min(Math.max(block.fillRatio * 100, 1), 100);
 
   return (
     <div
-      ref={t.ref} onMouseMove={t.onMove} onMouseLeave={t.onLeave}
-      className={`card-3d-sm bg-[var(--bg-surface)] border border-white/[0.05] rounded-xl p-2 shadow-depth-1 cursor-pointer animate-fade-up d${(i % 10) + 1}`}
-      style={t.style}
+      className="relative flex flex-col rounded-lg overflow-hidden transition-all duration-200 hover:scale-[1.02] hover:shadow-lg nano-card-content bg-[var(--bg-panel)] border border-[var(--border)]"
     >
-      <div className="flex items-center justify-between mb-0.5">
-        <span className="text-[9px] font-mono font-bold text-[var(--text-bright)]">{b.blockId}</span>
-        <span className="text-[8px] font-mono px-1 py-px rounded" style={{ backgroundColor: `color-mix(in srgb, ${BLOCK_COLORS[b.blockType]} 12%, transparent)`, color: BLOCK_COLORS[b.blockType], border: `1px solid color-mix(in srgb, ${BLOCK_COLORS[b.blockType]} 20%, transparent)` }}>{b.blockType}</span>
+      {/* Header */}
+          <div
+            className="flex items-center justify-between px-2 h-8 shrink-0"
+            style={{
+              background: bs.header,
+              borderBottom: "1px solid rgba(0,0,0,0.1)",
+            }}
+          >
+        <div className="flex gap-3 items-center">
+          <span className="text-lg font-mono font-black tracking-wider text-white">
+            {block.blockId}
+          </span>
+          {block.violationCount > 0 && (
+            <div
+              className={`flex items-center gap-1 px-1.5 h-5 rounded-sm text-white border border-white/20 shrink-0 ${
+                block.maxSeverity === "CRITICAL" ? "animate-critical-pulse" : ""
+              }`}
+              style={{ background: sevColor }}
+            >
+              <ShieldIcon className="w-3.5 h-3.5" />
+              <span className="text-xs font-mono font-black">
+                {block.violationCount}
+              </span>
+            </div>
+          )}
+          {block.neglectCount > 0 && (
+            <div className="flex items-center gap-1 px-1.5 h-5 rounded-sm bg-purple-600/90 text-white border border-purple-400/30 shrink-0">
+              <NeglectIcon className="w-3.5 h-3.5" />
+              <span className="text-xs font-mono font-black">
+                {block.neglectCount}
+              </span>
+            </div>
+          )}
+        </div>
+        <div className="flex items-center gap-1 text-white shrink-0">{tags}</div>
       </div>
-      <div className="w-full h-1 bg-white/[0.06] rounded-full overflow-hidden">
-        <div className="h-full rounded-full progress-glow" style={{ width: `${pct}%`, backgroundColor: color }} />
+
+      {/* Body */}
+      <div className="flex-1 min-h-0 p-1 nano-card-pivot overflow-hidden">
+        <div className="teu-stack-pivot shrink-0 min-h-0">
+          <span
+            className="font-mono font-black tabular-nums leading-none nano-card-teu-main text-[var(--text-primary)]"
+          >
+            {block.occupiedTeu.toLocaleString()}
+          </span>
+          <div className="flex items-baseline gap-1 min-h-0">
+            <span
+              className="font-mono opacity-40 leading-none nano-card-teu-sub text-[var(--text-primary)]"
+            >
+              /
+            </span>
+            <span
+              className="font-mono font-bold opacity-60 leading-none nano-card-teu-sub text-[var(--text-primary)]"
+            >
+              {block.capacityTeu.toLocaleString()}
+            </span>
+            <span
+              className="text-[10px] font-mono font-black uppercase ml-0.5 leading-none shrink-0"
+              style={{ color: bs.accent }}
+            >
+              TEU
+            </span>
+          </div>
+        </div>
+
+        <div className="flex text-[12px] font-mono font-bold items-center shrink-0 min-h-0 horizontal-stack mt-0.5">
+          <div className="flex items-center gap-2 min-h-0">
+            <Container20Icon className="nano-card-icon opacity-80" />
+            <span
+              className="tabular-nums nano-card-label text-[var(--text-primary)]"
+            >
+              {block.cnt20}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 min-h-0">
+            <Container40Icon className="nano-card-icon opacity-80" />
+            <span
+              className="tabular-nums nano-card-label text-[var(--text-primary)]"
+            >
+              {block.cnt40}
+            </span>
+          </div>
+        </div>
+
+        {block.cntImport > 0 && block.cntExport > 0 && (
+          <div className="flex text-[12px] font-mono font-bold items-center mt-0.5 border-t border-[var(--border)]/10 pt-0.5 shrink-0 min-h-0 horizontal-stack">
+            <div className="flex items-center gap-2 text-emerald-500 min-h-0">
+              <ExportIcon className="nano-card-icon" />
+              <span
+                className="tabular-nums nano-card-label text-[var(--text-primary)]"
+              >
+                {block.cntExport}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 text-teal-500 min-h-0">
+              <ImportIcon className="nano-card-icon" />
+              <span
+                className="tabular-nums nano-card-label text-[var(--text-primary)]"
+              >
+                {block.cntImport}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
-      <div className="flex justify-between text-[8px] font-mono text-[var(--text-dim)] mt-0.5">
-        <span>{formatCount(b.occupiedTeu)}/{formatCount(b.capacityTeu)}</span>
-        <span style={{ color }} className="font-bold">{pct}%</span>
+
+      {/* Fill bar */}
+      <div
+        className="relative h-4 mx-1.5 mb-1.5 rounded-full overflow-hidden shrink-0 bg-[var(--bg-progress)]"
+      >
+        <div
+          className="relative h-full rounded-full transition-all duration-500 overflow-hidden"
+          style={{ width: `${barWidth}%`, background: getFillBarColor(block.fillRatio) }}
+        >
+          <span
+            className="absolute right-1.5 top-1/2 text-[10px] font-mono font-black tabular-nums leading-none text-white whitespace-nowrap"
+            style={{
+              transform: "translateY(-50%)",
+              textShadow: "0 1px 2px rgba(0,0,0,0.45)",
+            }}
+          >
+            {pct}%
+          </span>
+        </div>
       </div>
-      {b.violationCount > 0 && <div className="text-[8px] font-mono text-[var(--red)] mt-0.5">{b.violationCount} violations</div>}
     </div>
   );
 }
 
-export function YardMonitor({ terminalCode }: { terminalCode: string }) {
-  const { data, loading, error, lastUpdated, refresh } = usePolling<YardData>(`/api/yard?terminal=${terminalCode}`, 60000);
-  const blocks = data?.blocks ?? [];
-  const violations = data?.violations ?? [];
-  const summary = data?.summary;
-
-  const byCat = useMemo(() => {
-    const m: Record<string, typeof blocks> = {};
-    for (const c of CATS) m[c.label] = blocks.filter((b) => c.types.includes(b.blockType));
-    return m;
-  }, [blocks]);
-
-  const crits = useMemo(() => violations.filter((v) => v.severity === "CRITICAL" || v.severity === "HIGH").slice(0, 8), [violations]);
-
-  if (loading && !data) return (
-    <>
-      <MonitorHeader title={`${terminalCode} Yard Monitor`} />
-      <div className="flex-1 flex flex-col items-center justify-center">
-        <div className="w-8 h-8 border-2 border-white/[0.08] border-t-[var(--cyan)] rounded-full animate-spin mb-3" />
-        <p className="text-[10px] font-mono uppercase tracking-[0.25em] text-[var(--text-dim)]">Loading</p>
+/* ─── Utilization Ring ─── */
+function UtilizationRing({ ratio }: { ratio: number }) {
+  const pct = Math.round(ratio * 100);
+  const color = getFillBarColor(ratio);
+  return (
+    <div className="relative w-24 h-24 mx-auto">
+      <svg viewBox="0 0 100 100" className="w-full h-full">
+        <circle cx="50" cy="50" r="45" fill="none" stroke="var(--border)" strokeWidth="6" />
+        <circle
+          cx="50"
+          cy="50"
+          r="45"
+          fill="none"
+          stroke={color}
+          strokeWidth="6"
+          strokeDasharray={`${2 * Math.PI * 45}`}
+          strokeDashoffset={`${2 * Math.PI * 45 * (1 - ratio)}`}
+          strokeLinecap="round"
+          transform="rotate(-90 50 50)"
+          className="transition-all duration-700"
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span
+          className="text-2xl font-mono font-black tabular-nums"
+          style={{ color }}
+        >
+          {pct}%
+        </span>
       </div>
-    </>
+    </div>
   );
+}
 
-  if (error && !data) return (
-    <>
-      <MonitorHeader title={`${terminalCode} Yard Monitor`} />
-      <div className="flex-1 flex items-center justify-center">
-        <div className="glass rounded-2xl px-10 py-6 text-center card-3d">
-          <div className="text-[10px] font-bold font-mono text-[var(--red)] uppercase tracking-[0.2em] mb-1">Connection Fault</div>
-          <p className="text-[11px] font-mono text-[var(--text-secondary)] mb-3">{error}</p>
-          <button onClick={() => refresh()} className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white bg-[var(--red)] hover:opacity-80 rounded transition-all">Retry</button>
-        </div>
-      </div>
-    </>
-  );
+/* ─── Main Component ─── */
+export default function YardMonitor({
+  terminalCode,
+}: {
+  terminalCode: string;
+}) {
+  const { data, loading, error, lastUpdated, refresh } = useMonitorData<YardDataWithViolations>({
+    url: `/api/yard?terminal=${terminalCode}`,
+    interval: 60000,
+  });
+
+  const blockCount = data?.blocks.length || 0;
+
+  // Classify blocks
+  const specialBlocks = data?.blocks.filter(
+    (b) => b.blockType === "DG" || b.blockType === "RF",
+  ) || [];
+  const highTrafficBlocks = data?.blocks.filter(
+    (b) =>
+      b.blockType === "IMP" ||
+      b.blockType === "EXP" ||
+      b.blockType === "IMP_EXP",
+  ) || [];
+  const auxiliaryBlocks = data?.blocks.filter(
+    (b) =>
+      b.blockType === "EMPTY" ||
+      b.blockType === "INSP" ||
+      b.blockType === "CFS" ||
+      b.blockType === "NEGLECT" ||
+      b.blockType === "OTHER",
+  ) || [];
+
+  const categories = [
+    {
+      label: "Special Containers",
+      blocks: specialBlocks,
+      dot: "#be185d",
+      bg: "rgba(190,24,93,0.08)",
+      border: "rgba(190,24,93,0.25)",
+    },
+    {
+      label: "High Traffic",
+      blocks: highTrafficBlocks,
+      dot: "#059669",
+      bg: "rgba(16,185,129,0.08)",
+      border: "rgba(16,185,129,0.25)",
+    },
+    {
+      label: "Auxiliary",
+      blocks: auxiliaryBlocks,
+      dot: "#64748b",
+      bg: "rgba(100,116,139,0.08)",
+      border: "rgba(100,116,139,0.25)",
+    },
+  ].filter((c) => c.blocks.length > 0);
 
   return (
-    <>
-      <MonitorHeader title={`${terminalCode} Yard Monitor`} stats={<div className="flex items-center gap-3 text-[10px] font-mono"><span className="text-[var(--text-secondary)]">{formatCount(blocks.length)} Blocks</span>{summary && <><span className="text-[var(--cyan)]">{summary.totalViolations} Violations</span><span className="text-[var(--red)]">{summary.criticalCount} Critical</span></>}</div>} lastUpdated={lastUpdated} />
-      <main className="flex-1 min-h-0 p-3 overflow-hidden flex items-center justify-center perspective-root bg-mesh bg-grid">
-        <div className="max-w-[1920px] mx-auto w-full flex gap-3 h-full items-center">
-          {/* Left: Blocks */}
-          <div className="flex-1 min-w-0 space-y-2.5 overflow-y-auto">
-            {CATS.map((cat) => {
-              const cb = byCat[cat.label] ?? [];
-              if (cb.length === 0) return null;
-              return (
-                <section key={cat.label}>
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-0.5 h-3.5 rounded-full" style={{ backgroundColor: cat.color }} />
-                    <h3 className="text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-[0.15em]">{cat.label}</h3>
-                    <span className="text-[9px] font-mono text-[var(--text-dim)]">({cb.length})</span>
-                  </div>
-                  <div className="grid grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-1.5">
-                    {cb.map((b, i) => <Block key={b.blockId} b={b} i={i} />)}
-                  </div>
-                </section>
-              );
-            })}
-            {blocks.length === 0 && (
-              <div className="flex items-center justify-center h-full">
-                <div className="glass rounded-2xl px-12 py-8 text-center card-3d">
-                  <div className="text-[10px] font-bold font-mono uppercase tracking-[0.2em] text-[var(--text-dim)] mb-1">No Yard Data</div>
-                  <p className="text-[11px] font-mono text-[var(--text-secondary)]">Waiting for yard blocks.</p>
-                </div>
-              </div>
-            )}
-          </div>
+    <div
+      className="h-full w-full flex flex-col overflow-hidden bg-[var(--bg-page)] select-none"
+    >
+      <MonitorHeader
+        title={`${terminalCode} Yard Monitoring`}
+        stats={`${blockCount} Blocks`}
+        lastUpdated={lastUpdated}
+        error={error}
+      />
 
-          {/* Right: Sidebar */}
-          {summary && (
-          <div className="w-56 shrink-0 space-y-2 overflow-y-auto">
-            <div className="bg-[var(--bg-surface)] border border-white/[0.06] rounded-2xl p-3 card-3d shadow-depth-2 animate-fade-right gradient-border">
-              <h4 className="text-[8px] font-mono font-bold text-[var(--text-dim)] uppercase tracking-[0.2em] mb-2 text-center">Utilization</h4>
-              <Gauge ratio={summary.overallFillRatio} />
-              <div className="mt-2">
-                <Stat label="TEU" value={formatCount(summary.totalOccupied)} color="var(--cyan)" />
-                <Stat label="Reefers" value={summary.reeferCount} color="var(--cyan)" />
-                <Stat label="Dangerous" value={summary.dgCount} color="var(--red)" />
-                <Stat label="Neglect" value={summary.neglectCount} color="var(--purple)" />
+      <main className="flex-1 min-h-0 flex gap-2 p-2">
+        {loading && !data ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-[var(--text-tertiary)]">
+            <div className="w-8 h-8 border-2 border-[var(--border)] border-t-[var(--accent-blue)] rounded-full animate-spin mb-3" />
+            <p className="text-xs font-mono uppercase tracking-widest">
+              Connecting to Yard Database
+            </p>
+          </div>
+        ) : error ? (
+          <div className="flex-1 flex flex-col items-center justify-center">
+            <div className="border border-[var(--accent-discharge)] bg-red-50 px-8 py-6 text-center max-w-md">
+              <div className="text-xs font-bold font-mono text-[var(--accent-discharge)] uppercase tracking-widest mb-2">
+                Connection Fault
               </div>
+              <p className="text-[11px] font-mono text-[var(--text-secondary)] mb-4">
+                {error}
+              </p>
+              <button
+                onClick={refresh}
+                className="px-4 py-1.5 text-[11px] font-mono font-bold uppercase tracking-wider text-white bg-[var(--accent-discharge)] hover:opacity-90 transition-opacity"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        ) : data ? (
+          <Fragment>
+            {/* Block Grid */}
+            <div className="flex-1 min-w-0 flex flex-col gap-1.5 overflow-hidden">
+              {categories.map((cat) => {
+                const cols = getColumnCount(cat.blocks.length);
+                const rows = Math.ceil(cat.blocks.length / cols);
+                return (
+                  <div
+                    key={cat.label}
+                    className="flex flex-col min-h-0 rounded-lg overflow-hidden animate-zone-breathe"
+                    style={{
+                      flex: rows,
+                      background: cat.bg,
+                      border: `2px solid ${cat.border}`,
+                    }}
+                  >
+                    <div className="flex items-center gap-2 px-3 py-1.5 shrink-0">
+                      <div
+                        className="w-2.5 h-2.5 rounded-full shrink-0"
+                        style={{ background: cat.dot }}
+                      />
+                      <span className="text-xs font-mono font-black uppercase tracking-[0.2em] text-[var(--text-primary)]">
+                        {cat.label}
+                      </span>
+                      <span className="text-[10px] font-mono font-bold text-[var(--text-secondary)] bg-black/10 dark:bg-white/10 px-1.5 rounded-full">
+                        {cat.blocks.length}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-h-0 px-1.5 pb-1.5">
+                      <div
+                        className="grid gap-1.5 h-full w-full"
+                        style={{
+                          gridTemplateColumns: `repeat(${cols}, 1fr)`,
+                          gridAutoRows: "1fr",
+                        }}
+                      >
+                        {cat.blocks.map((block) => (
+                          <YardBlockCard
+                            key={block.blockId}
+                            block={block}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
-            <div className="bg-[var(--bg-surface)] border border-white/[0.06] rounded-2xl p-3 card-3d shadow-depth-2 animate-fade-right d2 gradient-border">
-              <h4 className="text-[8px] font-mono font-bold text-[var(--text-dim)] uppercase tracking-[0.2em] mb-2">Alert Summary</h4>
-              <div className="grid grid-cols-2 gap-1.5">
-                {[["Critical", summary.criticalCount, "var(--red)"], ["High", summary.highCount, "var(--orange)"], ["Medium", summary.mediumCount, "var(--yellow)"], ["Total", summary.totalViolations, "var(--text-secondary)"]].map(([l, v, c]) => (
-                  <div key={l as string} className="rounded-lg p-1.5 text-center" style={{ backgroundColor: `color-mix(in srgb, ${c as string} 8%, transparent)`, border: `1px solid color-mix(in srgb, ${c as string} 20%, transparent)` }}>
-                    <span className="text-xs font-mono font-black block" style={{ color: c as string }}>{v as number}</span>
-                    <span className="text-[8px] font-mono uppercase" style={{ color: c as string }}>{l as string}</span>
+            {/* Sidebar */}
+            <aside className="w-[20%] min-w-[220px] max-w-[280px] flex flex-col gap-2 shrink-0">
+              <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-panel)] p-3 flex flex-col items-center gap-2">
+                <div className="text-xs font-mono font-black uppercase tracking-widest text-[var(--text-primary)]">
+                  Terminal Utilization
+                </div>
+                <UtilizationRing
+                  ratio={data.summary.overallFillRatio}
+                />
+                <div className="flex flex-col items-center gap-0.5 mt-1">
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-lg font-mono font-black text-[var(--text-primary)] tabular-nums">
+                      {data.summary.totalOccupied.toLocaleString()}
+                    </span>
+                    <span className="text-xs font-mono font-bold text-[var(--text-tertiary)] opacity-60">
+                      /
+                    </span>
+                    <div className="flex items-baseline gap-0.5">
+                      <span className="text-sm font-mono font-bold text-[var(--text-secondary)] tabular-nums">
+                        {data.summary.totalCapacity.toLocaleString()}
+                      </span>
+                      <span className="text-sm font-mono font-bold text-[var(--text-secondary)] uppercase tracking-tight ml-0.5">
+                        TEU
+                      </span>
+                    </div>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {crits.length > 0 && (
-              <div className="bg-[var(--bg-surface)] border border-[var(--red)]/15 rounded-2xl p-3 card-3d shadow-depth-2 animate-fade-right d3 gradient-border">
-                <h4 className="text-[8px] font-mono font-bold text-[var(--red)] uppercase tracking-[0.2em] mb-1.5">Priority Alerts</h4>
-                <div className="space-y-0 max-h-40 overflow-y-auto">
-                  {crits.map((v, i) => <Alert key={i} v={v} i={i} />)}
                 </div>
               </div>
-            )}
+
+              <div className="w-full h-px bg-[var(--border)] my-1" />
+
+              <div className="w-full flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-blue-500">
+                    <ReeferIcon className="w-5 h-5" />
+                    <span className="text-xs font-mono font-bold uppercase">
+                      Reefers
+                    </span>
+                  </div>
+                  <span className="text-sm font-mono font-black text-[var(--text-primary)] tabular-nums">
+                    {data.summary.reeferCount}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5" style={{ color: "#be185d" }}>
+                    <DangerIcon className="w-5 h-5" />
+                    <span className="text-xs font-mono font-bold uppercase">
+                      Dangerous
+                    </span>
+                  </div>
+                  <span className="text-sm font-mono font-black text-[var(--text-primary)] tabular-nums">
+                    {data.summary.dgCount}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-purple-500">
+                    <NeglectIcon className="w-5 h-5" />
+                    <span className="text-xs font-mono font-bold uppercase">
+                      Neglect
+                    </span>
+                  </div>
+                  <span className="text-sm font-mono font-black text-[var(--text-primary)] tabular-nums">
+                    {data.summary.neglectCount}
+                  </span>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-panel)] p-3 flex flex-col gap-2 shrink-0">
+                <div className="text-xs font-mono font-black uppercase tracking-widest text-[var(--text-primary)] flex justify-between items-center">
+                  <div className="flex items-center gap-1">
+                    <AlertIcon className="w-3.5 h-3.5 text-red-500" />
+                    <span>Alert Summary</span>
+                  </div>
+                  <span className="text-[var(--accent-discharge)]">
+                    {data.summary.totalViolations}
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="flex flex-col items-center p-1 rounded bg-red-500/10 border border-red-500/20">
+                    <span className="text-xs font-black text-red-500">
+                      {data.summary.criticalCount}
+                    </span>
+                    <span className="text-[8px] font-mono uppercase text-red-400">
+                      Crit
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-center p-1 rounded bg-orange-500/10 border border-orange-500/20">
+                    <span className="text-xs font-black text-orange-500">
+                      {data.summary.highCount}
+                    </span>
+                    <span className="text-[8px] font-mono uppercase text-orange-400">
+                      High
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-center p-1 rounded bg-yellow-500/10 border border-yellow-500/20">
+                    <span className="text-xs font-black text-yellow-500">
+                      {data.summary.mediumCount}
+                    </span>
+                    <span className="text-[8px] font-mono uppercase text-yellow-400">
+                      Med
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Priority Alerts */}
+              {data.violations && data.violations.length > 0 && (
+                <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-panel)] p-3 flex flex-col gap-2 flex-1 min-h-0 overflow-hidden">
+                  <div className="text-xs font-mono font-black uppercase tracking-widest text-[var(--text-primary)] flex justify-between items-center shrink-0">
+                    <div className="flex items-center gap-1">
+                      <AlertIcon className="w-3.5 h-3.5 text-red-500" />
+                      <span>Priority Alerts</span>
+                    </div>
+                    <span className="text-[var(--accent-discharge)]">{data.violations.length}</span>
+                  </div>
+                  <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5">
+                    {data.violations.map((v, i) => {
+                      const sevColor = v.severity === "CRITICAL" ? "#ef4444" : v.severity === "HIGH" ? "#f97316" : "#eab308";
+                      return (
+                        <div
+                          key={`${v.cntrNo}-${i}`}
+                          className="flex items-start gap-2 p-2 rounded border border-[var(--border-light)] bg-[var(--bg-panel)] hover:bg-[var(--bg-nav-hover)] transition-colors"
+                        >
+                          <span
+                            className="text-[8px] font-mono font-black px-1.5 py-0.5 rounded shrink-0 text-white"
+                            style={{ background: sevColor }}
+                          >
+                            {v.severity.charAt(0)}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] font-mono font-black text-[var(--text-primary)]">
+                                {v.cntrNo}
+                              </span>
+                              <span className="text-[8px] font-mono text-[var(--text-tertiary)]">
+                                {v.type}
+                              </span>
+                            </div>
+                            <div className="text-[8px] font-mono text-[var(--text-secondary)] truncate">
+                              {v.description}
+                            </div>
+                            <span className="text-[8px] font-mono font-bold text-[var(--text-tertiary)]">
+                              Block: {v.block}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              {data.violations && data.violations.length === 0 && (
+                <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3 flex items-center gap-2 shrink-0">
+                  <svg className="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span className="text-[10px] font-mono font-bold text-emerald-600 uppercase tracking-wider">
+                    All Clear — Safe State
+                  </span>
+                </div>
+              )}
+            </aside>
+          </Fragment>
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="border border-[var(--border)] px-12 py-8 text-center rounded-lg">
+              <div className="text-xs font-bold font-mono uppercase tracking-widest mb-2 text-[var(--text-tertiary)]">
+                No Active Yard Data
+              </div>
+              <p className="text-[11px] font-mono text-[var(--text-tertiary)]">
+                No yard data available. Updates automatically.
+              </p>
+            </div>
           </div>
-          )}
-        </div>
+        )}
       </main>
-    </>
+    </div>
   );
 }

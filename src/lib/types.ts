@@ -1,151 +1,139 @@
-export type Terminal = "ACT" | "DCT";
+export type BlockType = "DG" | "RF" | "EMPTY" | "IMP_EXP" | "IMP" | "EXP" | "CFS" | "INSP" | "NEGLECT" | "OTHER";
+export type Severity = "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+export type YTStatus = "MOVING" | "IDLE" | "STOPPED";
 
-export type ScreenKey =
-  | "ACT_VSL_MONITOR"
-  | "DCT_VSL_MONITOR"
-  | "ACT_EQU_MONITOR"
-  | "DCT_EQU_MONITOR"
-  | "ACT_YARD_MONITOR"
-  | "DCT_YARD_MONITOR"
-  | "ACT_YT_TRACKER"
-  | "DCT_YT_TRACKER"
-  | "GATE_MONITOR"
-  | "YARD_MONITOR"
-  | "BERTH_MONITOR";
+export interface User {
+  full_name: string;
+  screens: Record<string, boolean>;
+}
 
-export type MonitorKind = "VSL" | "EQU" | "YARD" | "OTHER";
+export interface VesselData {
+  vesselCode: string;
+  callYear: number;
+  callSeq: number;
+  cranes: CraneData[];
+}
 
-export interface Crane {
+export interface CraneData {
   craneId: string;
   movesDone: number;
   movesTotal: number;
-  loadingDone: number;
-  loadingTotal: number;
-  dischargingDone: number;
-  dischargingTotal: number;
   layoutRank: number;
-  mph: number;
 }
-
-export interface Vessel {
-  vesselCode: string;
-  vesselName: string;
-  voyageNumber: string;
-  callYear: string;
-  callSeq: string;
-  arrivalTime: string;
-  totalDone: number;
-  totalMoves: number;
-  loadingDone: number;
-  loadingTotal: number;
-  dischargingDone: number;
-  dischargingTotal: number;
-  gmph: number;
-  cranes: Crane[];
-}
-
-export type BlockType =
-  | "DG"
-  | "RF"
-  | "EMPTY"
-  | "IMP_EXP"
-  | "IMP"
-  | "EXP"
-  | "CFS"
-  | "INSP"
-  | "NEGLECT"
-  | "OTHER";
 
 export interface YardBlock {
   blockId: string;
-  remark?: string;
+  blockType: BlockType | string;
   capacityTeu: number;
   occupiedTeu: number;
-  containerCount?: number;
-  cnt20?: number;
-  cnt40?: number;
-  cntImport?: number;
-  cntExport?: number;
-  neglectCount: number;
   fillRatio: number;
-  blockType: BlockType;
+  cnt20: number;
+  cnt40: number;
+  cntImport: number;
+  cntExport: number;
+  remark: string;
   violationCount: number;
-  maxSeverity?: Severity;
+  maxSeverity: Severity | string;
+  neglectCount: number;
 }
 
-export type Severity = "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
-
-export interface Violation {
-  cntrNo: string;
-  block: string;
-  description: string;
-  type: string;
-  severity: Severity;
+export interface YardSummary {
+  overallFillRatio: number;
+  totalOccupied: number;
+  totalCapacity: number;
+  reeferCount: number;
+  dgCount: number;
+  neglectCount: number;
+  totalViolations: number;
+  criticalCount: number;
+  highCount: number;
+  mediumCount: number;
 }
 
 export interface YardData {
   blocks: YardBlock[];
-  violations: Violation[];
-  summary: {
-    totalCapacity: number;
-    totalOccupied: number;
-    overallFillRatio: number;
-    reeferCount: number;
-    dgCount: number;
-    neglectCount: number;
-    totalViolations: number;
-    criticalCount: number;
-    highCount: number;
-    mediumCount: number;
-  };
+  summary: YardSummary;
 }
 
-export type EquType =
-  | "QC"
-  | "YT"
-  | "RTG"
-  | "RS"
-  | "TL"
-  | "SUPPORT"
-  | "UNK";
+export interface Violation {
+  cntrNo: string;
+  type: string;
+  severity: Severity | string;
+  block: string;
+  description: string;
+}
 
-export interface EquCard {
-  equNo: string;
-  equType: EquType;
-  displayName: string;
-  driverName: string | null;
-  isOnline: boolean;
-  jobType: string | null;
-  position: string | null;
-  movesLastHour: number;
-  tttMinutes: number | null;
-  assignedQc: string | null;
+export interface YardDataWithViolations extends YardData {
+  violations?: Violation[];
 }
 
 export interface QCGroup {
   qcNo: string;
-  qcCard: EquCard;
-  ytCards: EquCard[];
+  qcCard: QCCard;
+  ytCards: YTCard[];
   pendingOrdersCount: number;
 }
 
+export interface QCCard {
+  qcNo: string;
+  movesLastHour: number;
+  driverName: string;
+  currentJob: string;
+}
+
+export interface YTCard {
+  equNo: string;
+  driverName: string;
+  containerNo: string;
+  containerSize: string;
+  jobStatus: string;
+  chassisNo: string;
+  displayName?: string;
+  isOnline?: boolean;
+  position?: string;
+  jobType?: string;
+  tttMinutes?: number;
+  movesLastHour?: number;
+}
+
 export interface YardSection {
+  equType: string;
   label: string;
-  equType: EquType;
-  accentColor?: string;
-  cards: EquCard[];
+  accent: string;
+  accentColor: string;
+  cards: YardSectionCard[];
+}
+
+export interface YardSectionCard {
+  equNo: string;
+  status: string;
+  equType: string;
+  containerNo?: string;
+  displayName?: string;
+  driverName?: string;
+  isOnline?: boolean;
+  position?: string;
+  jobType?: string;
+  tttMinutes?: number;
+  movesLastHour?: number;
 }
 
 export interface EquipmentData {
   qcGroups: QCGroup[];
   yardSections: YardSection[];
-  blockTypeMap?: Record<string, BlockType>;
   totalActive: number;
   totalOnline: number;
+  blockTypeMap: Record<string, string>;
 }
 
-export interface User {
-  username: string;
-  full_name: string;
-  screens: Record<ScreenKey, boolean>;
+export type EquType = "QC" | "RTG" | "YT" | "RS" | "TL" | "SUPPORT" | "UNK";
+
+export interface YTPosition {
+  equNo: string;
+  x: number;
+  y: number;
+  z: number;
+  heading: number;
+  containerNo?: string;
+  status: YTStatus | string;
 }

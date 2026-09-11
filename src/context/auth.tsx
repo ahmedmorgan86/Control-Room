@@ -1,22 +1,16 @@
 "use client";
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import type { User } from "@/lib/types";
 
-interface AuthContextValue {
+interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (username: string, password: string) => Promise<string | null>;
   logout: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextValue>({
+const AuthContext = createContext<AuthContextType>({
   user: null,
   isLoading: true,
   login: async () => "Not initialized",
@@ -35,8 +29,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const data = await res.json();
           if (data.authenticated) setUser(data.user);
         }
-      } catch (e) {
-        console.error("Session restore failed:", e);
+      } catch (err) {
+        console.error("Session restore failed:", err);
       } finally {
         setIsLoading(false);
       }
@@ -54,8 +48,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!res.ok) return data.error || "Login failed";
       setUser(data.user);
       return null;
-    } catch (e) {
-      console.error("Login error:", e);
+    } catch (err) {
+      console.error("Login error:", err);
       return "Network error. Please try again.";
     }
   }, []);
@@ -63,8 +57,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(async () => {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
-    } catch (e) {
-      console.error("Logout error:", e);
+    } catch (err) {
+      console.error("Logout error:", err);
     } finally {
       setUser(null);
     }

@@ -1,62 +1,102 @@
 import { NextRequest, NextResponse } from "next/server";
-import { BACKEND } from "@/lib/backend";
-import { createToken, toFrontendUser, type AuthUser } from "@/lib/auth";
 
-export async function POST(req: NextRequest) {
-  let body: { username?: string; password?: string } = {};
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+// Simple in-memory rate limiter with cleanup
+const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+const MAX_ATTEMPTS = 5;
+const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+
+function cleanupExpiredEntries() {
+  const now = Date.now();
+  for (const [key, record] of loginAttempts) {
+    if (now > record.resetAt) loginAttempts.delete(key);
   }
-  const username = body.username ?? "";
-  const password = body.password ?? "";
+}
 
-  if (!username || !password) {
-    return NextResponse.json({ error: "Username and password are required" }, { status: 400 });
+function checkRateLimit(ip: string): boolean {
+  cleanupExpiredEntries();
+  const now = Date.now();
+  const record = loginAttempts.get(ip);
+
+  if (!record || now > record.resetAt) {
+    loginAttempts.set(ip, { count: 1, resetAt: now + WINDOW_MS });
+    return true;
   }
 
-  let user: AuthUser | null = null;
+  if (record.count >= MAX_ATTEMPTS) {
+    return false;
+  }
 
-  try {
-    const res = await fetch(`${BACKEND}/api/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
-      cache: "no-store",
-    });
-    if (res.ok) {
-      const json = await res.json().catch(() => null);
-      if (json) {
-        const u = json.user ?? json;
-        user = {
-          username: u.username ?? username,
-          full_name: u.full_name ?? username,
-          screens: u.screens ?? {},
-        };
-      }
-    }
-  } catch {
-    // Backend unreachable — deny login instead of bypassing
+  record.count++;
+  return true;
+}
+
+export async function POST(request: NextRequest) {
+  const ip = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown";
+
+  if (!checkRateLimit(ip)) {
     return NextResponse.json(
-      { error: "Backend unreachable. Please try again later." },
-      { status: 503 },
+      { error: "Too many login attempts. Please try again later." },
+      { status: 429 },
     );
   }
 
-  if (!user) {
-    return NextResponse.json({ error: "Invalid username or password" }, { status: 401 });
-  }
+  try {
+    const { username, password } = await request.json();
 
-  const front = toFrontendUser(user);
-  const token = createToken(user);
-  const nextRes = NextResponse.json({ user: front });
-  nextRes.cookies.set("sess", token, {
-    httpOnly: true,
-    sameSite: "strict",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 60 * 8,
-  });
-  return nextRes;
+    if (!username || !password) {
+      return NextResponse.json(
+        { error: "Username and password required" },
+        { status: 400 },
+      );
+    }
+
+    // Basic input sanitization
+    const sanitizedUsername = String(username).trim().slice(0, 100);
+    const sanitizedPassword = String(password).slice(0, 200);
+
+    if (sanitizedUsername.length === 0 || sanitizedPassword.length === 0) {
+      return NextResponse.json(
+        { error: "Invalid credentials" },
+        { status: 400 },
+      );
+    }
+
+    const backendUrl = process.env.BACKEND_URL || "http://localhost:8080";
+    const res = await fetch(`${backendUrl}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: sanitizedUsername, password: sanitizedPassword }),
+    });
+
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ error: "Login failed" }));
+      return NextResponse.json(error, { status: res.status });
+    }
+
+    const data = await res.json();
+    const response = NextResponse.json({
+      user: data.user,
+    });
+
+    if (data.token) {
+      response.cookies.set("auth-token", data.token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        path: "/",
+        maxAge: 60 * 60 * 8,
+      });
+    }
+
+    // Reset rate limit on successful login
+    loginAttempts.delete(ip);
+
+    return response;
+  } catch (err) {
+    console.error("Login error:", err);
+    return NextResponse.json(
+      { error: "Backend connection failed" },
+      { status: 502 },
+    );
+  }
 }

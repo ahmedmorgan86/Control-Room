@@ -1,0 +1,17 @@
+{
+  "name": "Terminal Monitoring System",
+  "short_name": "TMS Control Room",
+  "description": "Real-time terminal operations monitoring for port control rooms",
+  "start_url": "/",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#0e1520",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
