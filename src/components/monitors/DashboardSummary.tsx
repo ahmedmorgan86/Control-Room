@@ -10,8 +10,8 @@ interface DashboardProps {
 
 function StatCard({ label, value, color, sub }: { label: string; value: string | number; color: string; sub?: string }) {
   return (
-    <div className="flex flex-col items-center justify-center p-3 rounded-xl border bg-[var(--bg-panel)]" style={{ borderColor: `${color}40` }}>
-      <span className="text-2xl font-mono font-black tabular-nums" style={{ color }}>{value}</span>
+    <div className="flex flex-col items-center justify-center p-3 rounded-xl border glass-3d card-3d-lift shadow-lg" style={{ borderColor: `color-mix(in oklab, ${color} 40%, transparent)` }}>
+      <span className="text-2xl font-mono font-black tabular-nums drop-shadow-sm" style={{ color }}>{value}</span>
       <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[var(--text-secondary)] mt-1">{label}</span>
       {sub && <span className="text-[9px] font-mono text-[var(--text-tertiary)] mt-0.5">{sub}</span>}
     </div>

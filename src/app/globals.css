@@ -456,6 +456,57 @@ body {
   animation: pageFadeIn 0.2s ease-out;
 }
 
+/* ─── 3D Spatial & Perspective Engine ─── */
+.perspective-800 {
+  perspective: 800px;
+}
+.perspective-1000 {
+  perspective: 1000px;
+}
+.perspective-1500 {
+  perspective: 1500px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+.glass-3d {
+  background: color-mix(in oklab, var(--bg-panel) 85%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.15), 0 0 0 1px color-mix(in oklab, var(--border) 40%, transparent);
+}
+body.dark .glass-3d {
+  background: color-mix(in oklab, var(--bg-panel) 75%, transparent);
+  box-shadow: 0 14px 40px -8px rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.1), 0 0 0 1px color-mix(in oklab, var(--border) 50%, transparent);
+}
+
+.card-3d-lift {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+  transform-style: preserve-3d;
+}
+.card-3d-lift:hover {
+  transform: translateY(-4px) rotateX(4deg) rotateY(-2deg) translateZ(8px);
+  box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.2), 0 0 15px rgba(37, 99, 235, 0.15);
+}
+
+.iso-grid-3d {
+  transform: rotateX(25deg) rotateZ(-12deg) scale(0.95);
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glow-3d-blue {
+  box-shadow: 0 0 25px rgba(37, 99, 235, 0.35);
+}
+.glow-3d-emerald {
+  box-shadow: 0 0 25px rgba(16, 185, 129, 0.35);
+}
+
 /* ─── Reduced Motion ─── */
 @media (prefers-reduced-motion: reduce) {
   .animate-pulse-dot,

@@ -103,14 +103,14 @@ function YardBlockCard({
 
   return (
     <div
-      className="relative flex flex-col rounded-lg overflow-hidden transition-all duration-200 hover:scale-[1.02] hover:shadow-lg nano-card-content bg-[var(--bg-panel)] border border-[var(--border)]"
+      className="relative flex flex-col rounded-xl overflow-hidden glass-3d card-3d-lift nano-card-content border border-[var(--border)]"
     >
       {/* Header */}
           <div
-            className="flex items-center justify-between px-2 h-8 shrink-0"
+            className="flex items-center justify-between px-2 h-8 shrink-0 shadow-md"
             style={{
-              background: bs.header,
-              borderBottom: "1px solid rgba(0,0,0,0.1)",
+              background: `linear-gradient(135deg, ${bs.header} 0%, color-mix(in oklab, ${bs.header} 70%, #000) 100%)`,
+              borderBottom: "1px solid rgba(255,255,255,0.15)",
             }}
           >
         <div className="flex gap-3 items-center">

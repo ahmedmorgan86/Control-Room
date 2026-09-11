@@ -121,8 +121,24 @@ function VesselVisualization({
 
   const craneSpacing = 680 / (activeCranes.length + 1);
 
+  const [tilt, setTilt] = useState({ x: 5, y: -5 });
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width - 0.5;
+    const py = (e.clientY - rect.top) / rect.height - 0.5;
+    setTilt({ x: -py * 12, y: px * 14 });
+  };
+
+  const handleMouseLeave = () => setTilt({ x: 3, y: -3 });
+
   return (
-    <div ref={containerRef} className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden bg-[var(--bg-vessel-viz)]">
+    <div
+      ref={containerRef}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden bg-[var(--bg-vessel-viz)] perspective-1000"
+    >
       {/* Waves - back layer (distant, lighter) */}
       <div className="absolute bottom-0 left-0 z-0 pointer-events-none" style={{ width: "100%", height: "65%" }}>
         <svg className="w-full h-full" viewBox="0 0 150 100" preserveAspectRatio="none">
@@ -160,24 +176,46 @@ function VesselVisualization({
         </svg>
       </div>
 
-      {/* Vessel SVG */}
-      <div className="relative w-full max-w-5xl aspect-video">
-        <svg viewBox="0 0 1200 400" className="absolute inset-0 z-10 w-full h-full" preserveAspectRatio="xMidYMid meet">
+      {/* 3D Vessel SVG Container with Mouse Parallax */}
+      <div
+        className="relative w-full max-w-5xl aspect-video preserve-3d transition-transform duration-200 ease-out"
+        style={{
+          transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) translateZ(10px)`,
+        }}
+      >
+        <svg viewBox="0 0 1200 400" className="absolute inset-0 z-10 w-full h-full filter drop-shadow-2xl" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <linearGradient id="hull3d" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#2a2d46" />
+              <stop offset="60%" stopColor="#151728" />
+              <stop offset="100%" stopColor="#0c0d16" />
+            </linearGradient>
+            <linearGradient id="deck3d" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#3b3f5c" />
+              <stop offset="100%" stopColor="#25283d" />
+            </linearGradient>
+            <linearGradient id="craneGlow" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#f59e0b" />
+              <stop offset="100%" stopColor="#d97706" />
+            </linearGradient>
+          </defs>
 
-          {/* Ship hull */}
-          <path d="M 50 320 L 200 180 L 250 180 L 250 140 L 300 140 L 300 180 L 1050 180 L 1100 220 L 1160 220 L 1180 250 L 1180 300 L 1160 320 Z" fill="#1a1a2e" opacity="0.9" />
-          <rect x="50" y="320" width="1130" height="15" rx="3" fill="#1a1a2e" />
+          {/* 3D Ship Hull Side Facet */}
+          <polygon points="50,320 200,180 1050,180 1160,320" fill="url(#deck3d)" />
+          <path d="M 50 320 L 200 180 L 250 180 L 250 140 L 300 140 L 300 180 L 1050 180 L 1100 220 L 1160 220 L 1180 250 L 1180 300 L 1160 320 Z" fill="url(#hull3d)" />
+          <rect x="50" y="320" width="1130" height="15" rx="3" fill="#090a10" opacity="0.9" />
 
-          {/* Bridge */}
-          <rect x="80" y="200" width="80" height="120" fill="#1a1a2e" opacity="0.85" />
-          <rect x="90" y="210" width="12" height="12" fill="#e8e8e8" opacity="0.6" />
-          <rect x="108" y="210" width="12" height="12" fill="#e8e8e8" opacity="0.6" />
-          <rect x="126" y="210" width="12" height="12" fill="#e8e8e8" opacity="0.6" />
-          <rect x="90" y="228" width="12" height="12" fill="#e8e8e8" opacity="0.6" />
-          <rect x="108" y="228" width="12" height="12" fill="#e8e8e8" opacity="0.6" />
-          <rect x="126" y="228" width="12" height="12" fill="#e8e8e8" opacity="0.6" />
+          {/* 3D Bridge Superstructure */}
+          <polygon points="80,200 100,185 180,185 160,200" fill="#474c6d" />
+          <rect x="80" y="200" width="80" height="120" fill="url(#hull3d)" />
+          <rect x="90" y="210" width="12" height="12" fill="#38bdf8" opacity="0.8" rx="2" />
+          <rect x="108" y="210" width="12" height="12" fill="#38bdf8" opacity="0.8" rx="2" />
+          <rect x="126" y="210" width="12" height="12" fill="#38bdf8" opacity="0.8" rx="2" />
+          <rect x="90" y="228" width="12" height="12" fill="#38bdf8" opacity="0.8" rx="2" />
+          <rect x="108" y="228" width="12" height="12" fill="#38bdf8" opacity="0.8" rx="2" />
+          <rect x="126" y="228" width="12" height="12" fill="#38bdf8" opacity="0.8" rx="2" />
 
-          {/* Cranes on vessel */}
+          {/* 3D Cranes on vessel */}
           {activeCranes.map((crane, i) => {
             const cx = 350 + i * craneSpacing;
             const isConflict = duplicateCraneIds.has(crane.craneId);
@@ -185,29 +223,52 @@ function VesselVisualization({
             return (
               <g key={crane.craneId} className={isConflict ? "qc-conflict-box" : ""}>
                 {isConflict && <circle cx={cx} cy={160} r={22} fill="none" stroke="#F59E0B" strokeWidth={2} className="qc-conflict-ring" />}
-                {/* Crane mast */}
-                <rect x={cx - 3} y={80} width={6} height={100} fill="#eab308" opacity="0.9" />
-                {/* Crane arm */}
-                <rect x={cx - 40} y={82} width={80} height={4} fill="#eab308" opacity="0.9" />
-                {/* Crane base */}
-                <rect x={cx - 8} y={175} width={16} height={8} fill="#eab308" opacity="0.9" />
-                {/* Crane label */}
-                <text x={cx} y={72} textAnchor="middle" fill="var(--text-primary)" fontSize="10" fontFamily="var(--font-mono)" fontWeight="bold">{crane.craneId}</text>
+                {/* 3D Crane Mast & Lattice Shadow */}
+                <line x1={cx - 8} y1={175} x2={cx - 3} y2={80} stroke="#b45309" strokeWidth="2" />
+                <line x1={cx + 8} y1={175} x2={cx + 3} y2={80} stroke="#b45309" strokeWidth="2" />
+                <rect x={cx - 4} y={80} width={8} height={100} fill="url(#craneGlow)" rx="1" />
+                {/* 3D Boom Arm */}
+                <polygon points={`${cx - 50},80 ${cx + 50},80 ${cx + 45},86 ${cx - 45},86`} fill="#f59e0b" />
+                <rect x={cx - 50} y={80} width={100} height={5} fill="#fbbf24" rx="1" />
+                {/* Crane Base */}
+                <rect x={cx - 12} y={175} width={24} height={8} fill="#78350f" rx="2" />
+                {/* Crane Label Badge */}
+                <g transform={`translate(${cx}, 68)`}>
+                  <rect x="-24" y="-12" width="48" height="16" rx="4" fill="var(--bg-panel)" stroke="var(--border)" strokeWidth="1" />
+                  <text x="0" y="0" textAnchor="middle" fill="var(--text-primary)" fontSize="9" fontFamily="var(--font-mono)" fontWeight="900">{crane.craneId}</text>
+                </g>
                 {/* Progress indicator */}
-                <rect x={cx - 12} y={188} width={24} height={3} rx={1.5} fill="var(--bg-progress)" />
-                <rect x={cx - 12} y={188} width={24 * progress} height={3} rx={1.5} fill="var(--accent-blue)" />
+                <rect x={cx - 16} y={188} width={32} height={4} rx="2" fill="var(--bg-progress)" />
+                <rect x={cx - 16} y={188} width={32 * progress} height={4} rx="2" fill="var(--accent-blue)" />
               </g>
             );
           })}
 
-          {/* Container placeholders */}
-          <rect x="350" y="250" width="50" height="30" rx="2" fill="#ef4444" opacity="0.8" />
-          <rect x="410" y="250" width="50" height="30" rx="2" fill="#16a34a" opacity="0.8" />
-          <rect x="470" y="250" width="50" height="30" rx="2" fill="#2563eb" opacity="0.8" />
-          <rect x="530" y="250" width="50" height="30" rx="2" fill="#ea580c" opacity="0.8" />
+          {/* 3D Container Stacks */}
+          <g transform="translate(0, 0)">
+            {/* Red Stack */}
+            <polygon points="350,250 360,240 410,240 400,250" fill="#f87171" />
+            <rect x="350" y="250" width="50" height="30" rx="2" fill="#ef4444" opacity="0.9" />
+            <rect x="400" y="240" width="10" height="30" fill="#dc2626" opacity="0.9" />
 
-          {/* Vessel name */}
-          <text x="600" y="165" textAnchor="middle" fill="var(--text-bright)" fontSize="16" fontFamily="var(--font-mono)" fontWeight="bold" letterSpacing="2">
+            {/* Green Stack */}
+            <polygon points="415,250 425,240 475,240 465,250" fill="#4ade80" />
+            <rect x="415" y="250" width="50" height="30" rx="2" fill="#16a34a" opacity="0.9" />
+            <rect x="465" y="240" width="10" height="30" fill="#15803d" opacity="0.9" />
+
+            {/* Blue Stack */}
+            <polygon points="480,250 490,240 540,240 530,250" fill="#60a5fa" />
+            <rect x="480" y="250" width="50" height="30" rx="2" fill="#2563eb" opacity="0.9" />
+            <rect x="530" y="240" width="10" height="30" fill="#1d4ed8" opacity="0.9" />
+
+            {/* Orange Stack */}
+            <polygon points="545,250 555,240 605,240 595,250" fill="#fb923c" />
+            <rect x="545" y="250" width="50" height="30" rx="2" fill="#ea580c" opacity="0.9" />
+            <rect x="595" y="240" width="10" height="30" fill="#c2410c" opacity="0.9" />
+          </g>
+
+          {/* 3D Vessel Title */}
+          <text x="600" y="165" textAnchor="middle" fill="var(--text-bright)" fontSize="18" fontFamily="var(--font-mono)" fontWeight="900" letterSpacing="3" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.8))">
             {vessel.vesselCode}
           </text>
         </svg>
@@ -228,7 +289,7 @@ function VesselCard({
     .sort(sortCranes);
 
   return (
-    <div className="flex-1 min-w-0 border border-[var(--border)] rounded-lg overflow-hidden bg-[var(--bg-panel)] flex flex-col">
+    <div className="flex-1 min-w-0 border border-[var(--border)] rounded-xl overflow-hidden glass-3d card-3d-lift flex flex-col">
       <div className="flex items-center justify-between px-[clamp(8px,1.2vh,16px)] py-[clamp(4px,0.5vh,8px)] bg-[var(--bg-vessel-header)] border-b border-[var(--border)]">
         <h2 className="text-sm font-mono font-black text-[var(--text-primary)] uppercase tracking-wider">
           {vessel.vesselCode}

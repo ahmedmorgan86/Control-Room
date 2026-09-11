@@ -100,6 +100,8 @@ export default function YTTracker({
   const svgW = Math.max(maxX * 1.1, 800);
   const svgH = Math.max(maxY * 1.1, 500);
 
+  const [is3D, setIs3D] = useState(true);
+
   return (
     <div className="h-full w-full flex flex-col overflow-hidden bg-[var(--bg-page)]">
       <MonitorHeader
@@ -109,8 +111,19 @@ export default function YTTracker({
         error={trackingError}
       />
 
-      {/* Zoom controls */}
-      <div className="flex items-center justify-center gap-2 py-1 bg-[var(--bg-panel)] border-b border-[var(--border)] shrink-0">
+      {/* Zoom & 3D controls */}
+      <div className="flex items-center justify-center gap-2 py-1 bg-[var(--bg-panel)] border-b border-[var(--border)] shrink-0 z-20">
+        <button
+          onClick={() => setIs3D(!is3D)}
+          className={`px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider rounded border transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+            is3D
+              ? "bg-[var(--accent-blue)] text-white border-blue-600 shadow-md"
+              : "border-[var(--border-light)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-nav-hover)]"
+          }`}
+        >
+          {is3D ? "3D Spatial Mode" : "2D Flat Mode"}
+        </button>
+        <div className="h-3 w-px bg-[var(--border)] opacity-40 mx-1" />
         <button
           onClick={() => setScale((s) => Math.min(3, s + 0.2))}
           className="px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider rounded border border-[var(--border-light)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-nav-hover)] active:scale-95 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
@@ -132,9 +145,9 @@ export default function YTTracker({
         </button>
       </div>
 
-      {/* Map area */}
+      {/* Map area with 3D Perspective Viewport */}
       <div
-        className="flex-1 min-h-0 relative overflow-hidden cursor-grab active:cursor-grabbing"
+        className="flex-1 min-h-0 relative overflow-hidden cursor-grab active:cursor-grabbing perspective-1000"
         onWheel={handleWheel}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
@@ -143,15 +156,14 @@ export default function YTTracker({
         style={{ background: "var(--bg-vessel-viz)" }}
       >
         <div
-          className="absolute inset-0"
+          className="absolute inset-0 transition-transform duration-500 ease-out preserve-3d"
           style={{
-            transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
+            transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale}) ${is3D ? "rotateX(32deg) rotateZ(-4deg)" : ""}`,
             transformOrigin: "center center",
-            transition: dragging ? "none" : "transform 0.1s ease-out",
           }}
         >
           {/* Grid */}
-          <svg width={svgW} height={svgH} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+          <svg width={svgW} height={svgH} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 filter drop-shadow-xl">
             <defs>
               <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
                 <path d="M 60 0 L 0 0 0 60" fill="none" stroke="var(--border-light)" strokeWidth="0.5" />
@@ -159,42 +171,49 @@ export default function YTTracker({
             </defs>
             <rect width="100%" height="100%" fill="url(#grid)" />
 
-            {/* YT markers */}
+            {/* 3D YT Vehicle Markers */}
             {positions.map((pos) => (
               <g key={pos.equNo} transform={`translate(${pos.x}, ${pos.z})`}>
-                {/* Glow */}
-                <circle r="18" fill={statusColor(pos.status)} opacity="0.15" />
-                {/* Box */}
-                <rect
-                  x="-10" y="-6" width="20" height="12" rx="3"
-                  fill={statusColor(pos.status)}
-                  stroke="var(--bg-vessel-viz)"
-                  strokeWidth="1.5"
-                  opacity="0.9"
-                />
-                {/* Arrow */}
+                {/* 3D Drop Shadow */}
+                <ellipse rx="18" ry="10" fill="rgba(0,0,0,0.35)" transform="translate(4, 8)" />
+                {/* 3D Status Glow Ring */}
+                <circle r="22" fill={statusColor(pos.status)} opacity="0.2" className="animate-pulse" />
+                {/* 3D Tractor Chassis Body */}
+                <rect x="-14" y="-8" width="28" height="16" rx="4" fill={statusColor(pos.status)} stroke="#1e293b" strokeWidth="2" />
+                {/* 3D Cab Windshield */}
+                <rect x="2" y="-6" width="10" height="12" rx="2" fill="#0284c7" opacity="0.9" />
+                {/* Container Load on Chassis */}
+                {pos.containerNo && (
+                  <rect x="-12" y="-5" width="12" height="10" rx="1" fill="#475569" stroke="#94a3b8" strokeWidth="1" />
+                )}
+                {/* Heading Direction Arrow */}
                 <text
                   textAnchor="middle"
                   dominantBaseline="central"
                   fill="white"
-                  fontSize="8"
-                  fontWeight="bold"
-                  fontFamily="monospace"
+                  fontSize="9"
+                  fontWeight="900"
+                  fontFamily="var(--font-mono)"
                   transform={`rotate(${pos.heading})`}
                 >
                   {headingToArrow(pos.heading)}
                 </text>
-                {/* Label */}
-                <text
-                  y="16"
-                  textAnchor="middle"
-                  fill="var(--text-tertiary)"
-                  fontSize="7"
-                  fontFamily="monospace"
-                  fontWeight="bold"
-                >
-                  {pos.equNo}
-                </text>
+                {/* 3D Floating Vehicle Label */}
+                <g transform="translate(0, -18)">
+                  <rect x="-20" y="-8" width="40" height="14" rx="3" fill="var(--bg-panel)" stroke="var(--border)" strokeWidth="1" opacity="0.95" />
+                  <text
+                    x="0"
+                    y="0"
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fill="var(--text-primary)"
+                    fontSize="8"
+                    fontFamily="var(--font-mono)"
+                    fontWeight="900"
+                  >
+                    {pos.equNo}
+                  </text>
+                </g>
               </g>
             ))}
           </svg>
