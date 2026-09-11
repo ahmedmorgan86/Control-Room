@@ -235,15 +235,13 @@ function YardSectionCard({
   section: YardSection;
 }) {
   const accent = section.accent || section.accentColor || "#64748b";
-  const bgAlpha = 0.05;
-  const borderAlpha = 0.2;
 
   return (
     <div
       className="flex-1 min-h-0 flex flex-col gap-1.5 rounded-lg p-2"
       style={{
-        background: `rgba(${parseInt(accent.slice(1, 3), 16)},${parseInt(accent.slice(3, 5), 16)},${parseInt(accent.slice(5, 7), 16)},${bgAlpha})`,
-        border: `1.5px solid rgba(${parseInt(accent.slice(1, 3), 16)},${parseInt(accent.slice(3, 5), 16)},${parseInt(accent.slice(5, 7), 16)},${borderAlpha})`,
+        background: `color-mix(in oklab, ${accent} 5%, transparent)`,
+        border: `1.5px solid color-mix(in oklab, ${accent} 20%, transparent)`,
       }}
     >
       <div className="flex items-center gap-2 px-0.5 shrink-0">

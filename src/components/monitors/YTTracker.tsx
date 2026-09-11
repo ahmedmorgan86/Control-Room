@@ -113,20 +113,20 @@ export default function YTTracker({
       <div className="flex items-center justify-center gap-2 py-1 bg-[var(--bg-panel)] border-b border-[var(--border)] shrink-0">
         <button
           onClick={() => setScale((s) => Math.min(3, s + 0.2))}
-          className="px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider rounded text-[var(--text-secondary)] hover:bg-[var(--bg-nav-hover)] transition-colors"
+          className="px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider rounded border border-[var(--border-light)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-nav-hover)] active:scale-95 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
         >
           Zoom +
         </button>
-        <span className="text-[10px] font-mono text-[var(--text-tertiary)]">{Math.round(scale * 100)}%</span>
+        <span className="text-[10px] font-mono font-bold text-[var(--text-secondary)] px-2">{Math.round(scale * 100)}%</span>
         <button
           onClick={() => setScale((s) => Math.max(0.3, s - 0.2))}
-          className="px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider rounded text-[var(--text-secondary)] hover:bg-[var(--bg-nav-hover)] transition-colors"
+          className="px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider rounded border border-[var(--border-light)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-nav-hover)] active:scale-95 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
         >
           Zoom -
         </button>
         <button
           onClick={() => { setScale(1); setOffset({ x: 0, y: 0 }); }}
-          className="px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider rounded text-[var(--text-secondary)] hover:bg-[var(--bg-nav-hover)] transition-colors"
+          className="px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider rounded border border-[var(--border-light)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-nav-hover)] active:scale-95 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
         >
           Reset
         </button>

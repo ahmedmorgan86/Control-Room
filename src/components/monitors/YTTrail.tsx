@@ -27,7 +27,6 @@ function useYTPositionsWithTrail(terminalCode: string) {
   const [positions, setPositions] = useState<YTWithTrail[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const prevPositions = useRef<Map<string, { x: number; z: number }>>(new Map());
   const positionsRef = useRef<YTWithTrail[]>([]);
 
   const fetchData = useCallback(async () => {
@@ -44,10 +43,8 @@ function useYTPositionsWithTrail(terminalCode: string) {
       }
       const data: YTPosition[] = await res.json();
       const updated = data.map((pos) => {
-        const prev = prevPositions.current.get(pos.equNo);
         const prevTrail = positionsRef.current.find((p) => p.equNo === pos.equNo)?.trail || [];
         const newTrail = [...prevTrail, { x: pos.x, z: pos.z }].slice(-TRAIL_LENGTH);
-        prevPositions.current.set(pos.equNo, { x: pos.x, z: pos.z });
         return { ...pos, trail: newTrail };
       });
       positionsRef.current = updated;
@@ -114,10 +111,10 @@ export default function YTTrail({ terminalCode }: { terminalCode: string }) {
         error={trackingError}
       />
       <div className="flex items-center justify-center gap-2 py-1 bg-[var(--bg-panel)] border-b border-[var(--border)] shrink-0">
-        <button onClick={() => setScale((s) => Math.min(3, s + 0.2))} className="px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider rounded text-[var(--text-secondary)] hover:bg-[var(--bg-nav-hover)]">Zoom +</button>
-        <span className="text-[10px] font-mono text-[var(--text-tertiary)]">{Math.round(scale * 100)}%</span>
-        <button onClick={() => setScale((s) => Math.max(0.3, s - 0.2))} className="px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider rounded text-[var(--text-secondary)] hover:bg-[var(--bg-nav-hover)]">Zoom -</button>
-        <button onClick={() => { setScale(1); setOffset({ x: 0, y: 0 }); }} className="px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider rounded text-[var(--text-secondary)] hover:bg-[var(--bg-nav-hover)]">Reset</button>
+        <button onClick={() => setScale((s) => Math.min(3, s + 0.2))} className="px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider rounded border border-[var(--border-light)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-nav-hover)] active:scale-95 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">Zoom +</button>
+        <span className="text-[10px] font-mono font-bold text-[var(--text-secondary)] px-2">{Math.round(scale * 100)}%</span>
+        <button onClick={() => setScale((s) => Math.max(0.3, s - 0.2))} className="px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider rounded border border-[var(--border-light)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-nav-hover)] active:scale-95 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">Zoom -</button>
+        <button onClick={() => { setScale(1); setOffset({ x: 0, y: 0 }); }} className="px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider rounded border border-[var(--border-light)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-nav-hover)] active:scale-95 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">Reset</button>
       </div>
       <div
         className="flex-1 min-h-0 relative overflow-hidden cursor-grab active:cursor-grabbing"

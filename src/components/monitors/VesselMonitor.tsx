@@ -77,13 +77,13 @@ function VesselVisualization({
     .filter((c) => c.movesDone < c.movesTotal)
     .sort(sortCranes);
   const tickRef = useRef(0);
-  const svgRef = useRef<SVGSVGElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<number>(0);
 
   useEffect(() => {
     const animate = () => {
       tickRef.current += 0.002;
-      const paths = svgRef.current?.querySelectorAll("[data-wave]");
+      const paths = containerRef.current?.querySelectorAll("[data-wave]");
       paths?.forEach((path) => {
         const el = path as SVGPathElement;
         const y = parseFloat(el.getAttribute("data-y") || "50");
@@ -119,13 +119,13 @@ function VesselVisualization({
     { phase: -0.8, freq: 0.3, amp: 5, y: 88, op: 1.0, color: "var(--wave-8)", speed: -1.2 },
   ];
 
-  const craneSpacing = 150 / (activeCranes.length + 1);
+  const craneSpacing = 680 / (activeCranes.length + 1);
 
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden bg-[var(--bg-vessel-viz)]">
+    <div ref={containerRef} className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden bg-[var(--bg-vessel-viz)]">
       {/* Waves - back layer (distant, lighter) */}
       <div className="absolute bottom-0 left-0 z-0 pointer-events-none" style={{ width: "100%", height: "65%" }}>
-        <svg ref={svgRef} className="w-full h-full" viewBox="0 0 150 100" preserveAspectRatio="none">
+        <svg className="w-full h-full" viewBox="0 0 150 100" preserveAspectRatio="none">
           {waves.slice(0, 4).map((w, i) => (
             <path
               key={i}
@@ -142,7 +142,7 @@ function VesselVisualization({
         </svg>
       </div>
       {/* Waves - front layer (closer, more opaque) */}
-      <div className="absolute bottom-0 left-0 z-25 pointer-events-none opacity-95" style={{ width: "100%", height: "65%" }}>
+      <div className="absolute bottom-0 left-0 z-20 pointer-events-none opacity-95" style={{ width: "100%", height: "65%" }}>
         <svg className="w-full h-full" viewBox="0 0 150 100" preserveAspectRatio="none">
           {waves.slice(4).map((w, i) => (
             <path

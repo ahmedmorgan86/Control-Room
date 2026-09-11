@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Build tooling (Node scripts) is not part of the app source.
     "scripts/**",
+    // Replica bundled assets
+    "replica/**",
   ]),
 ]);
 

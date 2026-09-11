@@ -76,8 +76,8 @@ export default function GateMonitor({ terminalCode }: { terminalCode: string }) 
             <div className="flex-1 min-h-0 rounded-lg border border-[var(--border)] bg-[var(--bg-panel)] overflow-hidden">
               <div className="overflow-y-auto custom-scrollbar" style={{ maxHeight: "calc(100vh - 220px)" }}>
                 <table className="w-full border-collapse" role="grid" aria-label="Gate transactions">
-                  <thead>
-                    <tr className="bg-[var(--bg-header)] border-b border-[var(--border)] text-[10px] font-mono font-black uppercase tracking-widest text-[var(--text-secondary)]">
+                  <thead className="sticky top-0 z-10 bg-[var(--bg-header)]">
+                    <tr className="border-b border-[var(--border)] text-[10px] font-mono font-black uppercase tracking-widest text-[var(--text-secondary)]">
                       <th className="text-left px-4 py-2 font-bold">Time</th>
                       <th className="text-left px-4 py-2 font-bold">Gate</th>
                       <th className="text-left px-4 py-2 font-bold">Truck</th>

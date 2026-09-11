@@ -148,6 +148,8 @@ body.dark {
   --wave-6: #19283d;
   --wave-7: #182430;
   --wave-8: #172030;
+  --accent-discharge: #ef4444;
+  --accent-loading: #10b981;
   --bg-void: var(--bg-deep);
   --accent-crane: #ea580c;
 }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 
-interface UseMonitorDataOptions<T> {
+interface UseMonitorDataOptions {
   url: string;
   interval?: number;
   timeout?: number;
@@ -22,7 +22,7 @@ export function useMonitorData<T>({
   interval = 30000,
   timeout = 15000,
   enabled = true,
-}: UseMonitorDataOptions<T>): UseMonitorDataReturn<T> {
+}: UseMonitorDataOptions): UseMonitorDataReturn<T> {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

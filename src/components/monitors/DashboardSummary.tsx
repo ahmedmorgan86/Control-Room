@@ -68,7 +68,7 @@ export default function DashboardSummary({ terminalCode }: DashboardProps) {
             <div className="w-8 h-8 border-2 border-[var(--border)] border-t-[var(--accent-blue)] rounded-full animate-spin" />
           </div>
         ) : (
-          <div className="grid grid-cols-4 gap-[clamp(8px,1.2vh,16px)] h-full">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[clamp(8px,1.2vh,16px)] h-full">
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2 px-1">
                 <svg className="w-4 h-4 text-[var(--accent-blue)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>

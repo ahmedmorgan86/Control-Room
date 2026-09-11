@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
+import Image from "next/image";
 import { useAuth } from "@/context/auth";
 import { screenLabels } from "@/lib/screens";
 
@@ -88,7 +89,7 @@ export default function Topbar({
   const DarkModeToggle = (
     <button
       onClick={onToggleDarkMode}
-      className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none overflow-hidden ${
+      className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 overflow-hidden ${
         isDarkMode ? "bg-[var(--accent-blue)]" : "bg-slate-300"
       }`}
     >
@@ -143,9 +144,12 @@ export default function Topbar({
         style={{ minHeight: "64px" }}
       >
         <div className="flex items-center gap-4 flex-1">
-          <img
+          <Image
             src={isDarkMode ? "/images/logo1_darkmode.svg" : "/images/logo1.svg"}
             alt="Logo"
+            width={140}
+            height={44}
+            priority
             className="h-11 w-auto object-contain"
           />
           <span className="text-xs font-mono font-bold text-[var(--text-secondary)] uppercase tracking-widest whitespace-nowrap">
@@ -195,10 +199,10 @@ export default function Topbar({
                           if (first) onNavigate(first.key);
                         }
                       }}
-                      className={`relative z-10 px-6 py-1 text-[11px] font-mono font-black uppercase tracking-wide whitespace-nowrap transition-colors duration-300 ${
+                      className={`relative z-10 px-6 py-1 rounded-full text-[11px] font-mono font-black uppercase tracking-wide whitespace-nowrap transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                         active
                           ? "text-slate-900"
-                          : "text-slate-500 hover:text-slate-600"
+                          : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
                       }`}
                       role="tab"
                       aria-selected={active}
@@ -240,10 +244,10 @@ export default function Topbar({
                     screenTabRefs.current[key] = el!;
                   }}
                   onClick={() => onNavigate(key)}
-                  className={`relative z-10 px-5 py-1 rounded-full text-[11px] font-mono font-black uppercase tracking-wide whitespace-nowrap transition-colors duration-300 ${
+                  className={`relative z-10 px-5 py-1 rounded-full text-[11px] font-mono font-black uppercase tracking-wide whitespace-nowrap transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                     activeScreen === key
                       ? "text-slate-900"
-                      : "text-slate-500 hover:text-slate-600"
+                      : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
                   }`}
                   role="tab"
                   aria-selected={activeScreen === key}
@@ -292,9 +296,12 @@ export default function Topbar({
       style={{ minHeight: "64px" }}
     >
       <div className="flex items-center gap-4">
-        <img
+        <Image
           src={isDarkMode ? "/images/logo1_darkmode.svg" : "/images/logo1.svg"}
           alt="Logo"
+          width={140}
+          height={44}
+          priority
           className="h-11 w-auto object-contain"
         />
         <span className="text-xs font-mono font-bold text-[var(--text-secondary)] uppercase tracking-widest whitespace-nowrap">

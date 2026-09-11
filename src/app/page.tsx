@@ -61,10 +61,12 @@ export default function Page() {
   useEffect(() => {
     const saved = localStorage.getItem("activeScreen");
     const dark = localStorage.getItem("darkMode") === "true";
-    setActiveScreenRaw(saved);
-    setIsDarkMode(dark);
-    if (dark) document.body.classList.add("dark");
-    setMounted(true);
+    queueMicrotask(() => {
+      setActiveScreenRaw(saved);
+      setIsDarkMode(dark);
+      if (dark) document.body.classList.add("dark");
+      setMounted(true);
+    });
   }, []);
 
   const activeScreen = user
