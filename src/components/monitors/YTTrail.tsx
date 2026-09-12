@@ -258,7 +258,7 @@ export default function YTTrail({ terminalCode }: { terminalCode: string }) {
                     fill="white"
                     fontSize="8"
                     fontWeight="bold"
-                    fontFamily="monospace"
+                    fontFamily="var(--font-mono)"
                     transform={`rotate(${pos.heading ?? 0} ${x} ${z})`}
                   >
                     {headingToArrow(pos.heading ?? 0)}
@@ -268,7 +268,7 @@ export default function YTTrail({ terminalCode }: { terminalCode: string }) {
                     textAnchor="middle"
                     fill="var(--text-tertiary)"
                     fontSize="7"
-                    fontFamily="monospace"
+                    fontFamily="var(--font-mono)"
                     fontWeight="bold"
                   >
                     {pos._trackKey}

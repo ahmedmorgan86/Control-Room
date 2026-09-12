@@ -55,15 +55,15 @@ export default function VesselTrendChart({ terminalCode }: TrendChartProps) {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />
-              <XAxis dataKey="name" stroke="var(--text-tertiary)" fontSize={10} fontFamily="monospace" />
-              <YAxis stroke="var(--text-tertiary)" fontSize={10} fontFamily="monospace" />
+              <XAxis dataKey="name" stroke="var(--text-tertiary)" fontSize={10} fontFamily="var(--font-mono)" />
+              <YAxis stroke="var(--text-tertiary)" fontSize={10} fontFamily="var(--font-mono)" />
               <Tooltip
                 contentStyle={{
                   background: "var(--bg-panel)",
                   border: "1px solid var(--border)",
                   borderRadius: "8px",
                   fontSize: "11px",
-                  fontFamily: "monospace",
+                  fontFamily: "var(--font-mono)",
                 }}
                 labelStyle={{ color: "var(--text-primary)" }}
               />

@@ -245,8 +245,8 @@ function VesselScope({
                   textAnchor="middle"
                   fill={isConflict ? "#ef4444" : "var(--text-primary)"}
                   fontSize="30"
-                  fontWeight="900"
-                  fontFamily="monospace"
+                  fontWeight="700"
+                  fontFamily="var(--font-mono)"
                 >
                   {crane.craneId}
                 </text>
@@ -285,9 +285,9 @@ function VesselScope({
               x="600"
               y="285"
               fill="white"
-              fontSize="56"
-              fontWeight="900"
-              fontFamily="monospace"
+fontSize="56"
+                  fontWeight="700"
+                  fontFamily="var(--font-mono)"
               textAnchor="middle"
               letterSpacing="2"
               className="uppercase"

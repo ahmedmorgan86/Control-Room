@@ -277,7 +277,7 @@ export default function YTTracker({
                           dominantBaseline="central"
                           fill="white"
                           fontSize="9"
-                          fontWeight="900"
+                          fontWeight="700"
                           fontFamily="var(--font-mono)"
                           transform={`rotate(${marker.heading})`}
                         >
