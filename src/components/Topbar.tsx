@@ -150,8 +150,7 @@ export default function Topbar({
             width={140}
             height={44}
             priority
-            className="h-11 w-auto object-contain"
-            style={{ width: "auto" }}
+            className="h-11 w-[140px] object-contain"
           />
           <span className="text-xs font-mono font-bold text-[var(--text-secondary)] uppercase tracking-widest whitespace-nowrap">
             Terminal Monitoring System
@@ -303,8 +302,7 @@ export default function Topbar({
           width={140}
           height={44}
           priority
-          className="h-11 w-auto object-contain"
-          style={{ width: "auto" }}
+          className="h-11 w-[140px] object-contain"
         />
         <span className="text-xs font-mono font-bold text-[var(--text-secondary)] uppercase tracking-widest whitespace-nowrap">
           Terminal Monitoring System
