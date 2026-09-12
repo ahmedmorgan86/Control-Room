@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
 import Image from "next/image";
@@ -145,12 +145,13 @@ export default function Topbar({
       >
         <div className="flex items-center gap-4 flex-1">
           <Image
-            src={isDarkMode ? "/images/logo1_darkmode.svg" : "/images/logo1.svg"}
+            src={isDarkMode ? "/images/logo1_darkmode.png" : "/images/logo1.png"}
             alt="Logo"
             width={140}
             height={44}
             priority
             className="h-11 w-auto object-contain"
+            style={{ width: "auto" }}
           />
           <span className="text-xs font-mono font-bold text-[var(--text-secondary)] uppercase tracking-widest whitespace-nowrap">
             Terminal Monitoring System
@@ -297,12 +298,13 @@ export default function Topbar({
     >
       <div className="flex items-center gap-4">
         <Image
-          src={isDarkMode ? "/images/logo1_darkmode.svg" : "/images/logo1.svg"}
+          src={isDarkMode ? "/images/logo1_darkmode.png" : "/images/logo1.png"}
           alt="Logo"
           width={140}
           height={44}
           priority
           className="h-11 w-auto object-contain"
+          style={{ width: "auto" }}
         />
         <span className="text-xs font-mono font-bold text-[var(--text-secondary)] uppercase tracking-widest whitespace-nowrap">
           Terminal Monitoring System

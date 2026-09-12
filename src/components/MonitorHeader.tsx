@@ -60,7 +60,7 @@ export default function MonitorHeader({
         {error && (
           <Fragment>
             <span className="text-[var(--border)]">&middot;</span>
-            <span className="text-sm font-mono font-bold text-[var(--accent-discharge)]">
+            <span className="text-xs font-mono font-bold text-[var(--accent-discharge)]">
               {error}
             </span>
           </Fragment>

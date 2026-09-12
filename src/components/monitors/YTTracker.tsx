@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import MonitorHeader from "@/components/MonitorHeader";
 import type { YTPosition } from "@/lib/types";
+import { parseCorners, projectPositions } from "@/lib/layoutProjection";
 
 function useYTPositions(terminalCode: string) {
   const [positions, setPositions] = useState<YTPosition[]>([]);
@@ -49,6 +50,48 @@ function useYTPositions(terminalCode: string) {
   return { positions, error, lastUpdated };
 }
 
+function parseViewBox(svgText: string) {
+  const match = svgText.match(/viewBox="([^"]*)"/);
+  if (!match) return { minX: 0, minY: 0, w: 1000, h: 600 };
+  const parts = match[1].trim().split(/[\s,]+/).map(Number);
+  return { minX: parts[0] || 0, minY: parts[1] || 0, w: parts[2] || 1000, h: parts[3] || 600 };
+}
+
+function useTerminalLayout(terminalCode: string) {
+  const [svg, setSvg] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    fetch(`/TerminalLayout_${terminalCode}.svg?t=${Date.now()}`)
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.text();
+      })
+      .then((text) => {
+        if (cancelled) return;
+        setSvg(text);
+        setLoading(false);
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        console.error("Failed to parse terminal SVG:", err);
+        setError(err instanceof Error ? err.message : "Failed to load terminal layout");
+        setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [terminalCode]);
+
+  const viewBox = useMemo(() => (svg ? parseViewBox(svg) : null), [svg]);
+
+  return { svg, viewBox, error, loading };
+}
+
 function headingToArrow(heading: number): string {
   if (heading >= 315 || heading < 45) return "▲";
   if (heading >= 45 && heading < 135) return "▶";
@@ -62,6 +105,33 @@ function statusColor(status: string): string {
   return "var(--accent-discharge)";
 }
 
+const ANGLED_VIEW = "rotateX(46deg) rotateZ(-32deg) scale(1.45)";
+
+function PerspectiveIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+      <path d="M12 2L1 21h22L12 2zm0 4l7.53 13H4.47L12 6zm-1 5v4h2v-4h-2zm0 6v2h2v-2h-2z" />
+    </svg>
+  );
+}
+
+function TopViewIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5">
+      <path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93L4.93 19.07" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+interface MapMarker {
+  key: string;
+  label: string;
+  left: number; // % of viewBox width
+  top: number; // % of viewBox height
+  heading: number;
+  status: string;
+}
+
 export default function YTTracker({
   terminalCode,
 }: {
@@ -71,8 +141,10 @@ export default function YTTracker({
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
   const dragStart = useRef({ x: 0, y: 0, ox: 0, oy: 0 });
+  const [cameraView, setCameraView] = useState<"angled" | "top">("angled");
 
   const { positions, error: trackingError, lastUpdated } = useYTPositions(terminalCode);
+  const { svg, viewBox, error: layoutError, loading: layoutLoading } = useTerminalLayout(terminalCode);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
@@ -95,12 +167,32 @@ export default function YTTracker({
 
   const handleMouseUp = useCallback(() => setDragging(false), []);
 
-  const maxX = positions.length > 0 ? Math.max(...positions.map((p) => p.x)) : 1000;
-  const maxY = positions.length > 0 ? Math.max(...positions.map((p) => p.z)) : 600;
-  const svgW = Math.max(maxX * 1.1, 800);
-  const svgH = Math.max(maxY * 1.1, 500);
+  const { minX: mapMinX, minY: mapMinY, w: mapW, h: mapH } =
+    viewBox || { minX: 0, minY: 0, w: 1000, h: 600 };
 
-  const [is3D, setIs3D] = useState(true);
+  const isGeo = positions.some(
+    (p) => typeof p.latitude === "number" && typeof p.longitude === "number",
+  );
+
+  const corners = useMemo(
+    () => (svg && isGeo ? parseCorners(svg, terminalCode) : null),
+    [svg, isGeo, terminalCode],
+  );
+
+  const projected = useMemo(() => projectPositions(positions, corners), [positions, corners]);
+
+  const markers: MapMarker[] = useMemo(
+    () =>
+      projected.map((p) => ({
+        key: p.key,
+        label: p.label,
+        left: ((p.x - mapMinX) / mapW) * 100,
+        top: ((p.z - mapMinY) / mapH) * 100,
+        heading: p.heading,
+        status: p.status,
+      })),
+    [projected, mapMinX, mapMinY, mapW, mapH],
+  );
 
   return (
     <div className="h-full w-full flex flex-col overflow-hidden bg-[var(--bg-page)]">
@@ -111,129 +203,111 @@ export default function YTTracker({
         error={trackingError}
       />
 
-      {/* Zoom & 3D controls */}
-      <div className="flex items-center justify-center gap-2 py-1 bg-[var(--bg-panel)] border-b border-[var(--border)] shrink-0 z-20">
-        <button
-          onClick={() => setIs3D(!is3D)}
-          className={`px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider rounded border transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
-            is3D
-              ? "bg-[var(--accent-blue)] text-white border-blue-600 shadow-md"
-              : "border-[var(--border-light)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-nav-hover)]"
-          }`}
-        >
-          {is3D ? "3D Spatial Mode" : "2D Flat Mode"}
-        </button>
-        <div className="h-3 w-px bg-[var(--border)] opacity-40 mx-1" />
-        <button
-          onClick={() => setScale((s) => Math.min(3, s + 0.2))}
-          className="px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider rounded border border-[var(--border-light)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-nav-hover)] active:scale-95 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-        >
-          Zoom +
-        </button>
-        <span className="text-[10px] font-mono font-bold text-[var(--text-secondary)] px-2">{Math.round(scale * 100)}%</span>
-        <button
-          onClick={() => setScale((s) => Math.max(0.3, s - 0.2))}
-          className="px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider rounded border border-[var(--border-light)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-nav-hover)] active:scale-95 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-        >
-          Zoom -
-        </button>
-        <button
-          onClick={() => { setScale(1); setOffset({ x: 0, y: 0 }); }}
-          className="px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider rounded border border-[var(--border-light)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-nav-hover)] active:scale-95 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-        >
-          Reset
-        </button>
-      </div>
-
-      {/* Map area with 3D Perspective Viewport */}
+      {/* Map area */}
       <div
-        className="flex-1 min-h-0 relative overflow-hidden cursor-grab active:cursor-grabbing perspective-1000"
+        className="flex-1 min-h-0 relative overflow-hidden cursor-grab active:cursor-grabbing"
         onWheel={handleWheel}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        style={{ background: "var(--bg-vessel-viz)" }}
+        onDoubleClick={() => {
+          setScale(1);
+          setOffset({ x: 0, y: 0 });
+        }}
+        style={{ background: "var(--bg-vessel-viz)", perspective: "1400px" }}
       >
-        <div
-          className="absolute inset-0 transition-transform duration-500 ease-out preserve-3d"
-          style={{
-            transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale}) ${is3D ? "rotateX(32deg) rotateZ(-4deg)" : ""}`,
-            transformOrigin: "center center",
-          }}
-        >
-          {/* Grid */}
-          <svg width={svgW} height={svgH} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 filter drop-shadow-xl">
-            <defs>
-              <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
-                <path d="M 60 0 L 0 0 0 60" fill="none" stroke="var(--border-light)" strokeWidth="0.5" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#grid)" />
+        {layoutLoading ? (
+          <div className="w-full h-full flex items-center justify-center bg-[var(--bg-page)]">
+            <div className="text-center">
+              <div className="w-8 h-8 border-2 border-[var(--border)] border-t-[var(--accent-blue)] rounded-full animate-spin mx-auto mb-3" />
+              <p className="text-xs font-mono uppercase tracking-widest text-[var(--text-tertiary)]">
+                Loading Terminal Layout
+              </p>
+            </div>
+          </div>
+        ) : layoutError || !svg ? (
+          <div className="w-full h-full flex items-center justify-center bg-[var(--bg-page)]">
+            <div className="text-center">
+              <p className="text-sm font-mono text-red-500 mb-2">Failed to load terminal layout</p>
+              <p className="text-xs font-mono text-[var(--text-tertiary)]">{layoutError}</p>
+            </div>
+          </div>
+        ) : (
+          <div
+            className={`absolute inset-0 transition-transform duration-500 ease-out ${cameraView === "angled" ? "preserve-3d" : ""}`}
+            style={{
+              transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale}) ${
+                cameraView === "angled" ? ANGLED_VIEW : ""
+              }`,
+              transformOrigin: "center center",
+            }}
+          >
+            {/* Terminal layout map */}
+            <div
+              className="absolute inset-0 terminal-map"
+              dangerouslySetInnerHTML={{ __html: svg }}
+            />
 
-            {/* 3D YT Vehicle Markers */}
-            {positions.map((pos) => (
-              <g key={pos.equNo} transform={`translate(${pos.x}, ${pos.z})`}>
-                {/* 3D Drop Shadow */}
-                <ellipse rx="18" ry="10" fill="rgba(0,0,0,0.35)" transform="translate(4, 8)" />
-                {/* 3D Status Glow Ring */}
-                <circle r="22" fill={statusColor(pos.status)} opacity="0.2" className="animate-pulse" />
-                {/* 3D Tractor Chassis Body */}
-                <rect x="-14" y="-8" width="28" height="16" rx="4" fill={statusColor(pos.status)} stroke="#1e293b" strokeWidth="2" />
-                {/* 3D Cab Windshield */}
-                <rect x="2" y="-6" width="10" height="12" rx="2" fill="#0284c7" opacity="0.9" />
-                {/* Container Load on Chassis */}
-                {pos.containerNo && (
-                  <rect x="-12" y="-5" width="12" height="10" rx="1" fill="#475569" stroke="#94a3b8" strokeWidth="1" />
-                )}
-                {/* Heading Direction Arrow */}
-                <text
-                  textAnchor="middle"
-                  dominantBaseline="central"
-                  fill="white"
-                  fontSize="9"
-                  fontWeight="900"
-                  fontFamily="var(--font-mono)"
-                  transform={`rotate(${pos.heading})`}
-                >
-                  {headingToArrow(pos.heading)}
-                </text>
-                {/* 3D Floating Vehicle Label */}
-                <g transform="translate(0, -18)">
-                  <rect x="-20" y="-8" width="40" height="14" rx="3" fill="var(--bg-panel)" stroke="var(--border)" strokeWidth="1" opacity="0.95" />
-                  <text
-                    x="0"
-                    y="0"
-                    textAnchor="middle"
-                    dominantBaseline="central"
-                    fill="var(--text-primary)"
-                    fontSize="8"
-                    fontFamily="var(--font-mono)"
-                    fontWeight="900"
+            {/* YT vehicle markers overlaid on the map */}
+            <div className="absolute inset-0 pointer-events-none">
+              {markers.map((marker) => {
+                const color = statusColor(marker.status);
+                return (
+                  <div
+                    key={marker.key}
+                    className="absolute"
+                    style={{
+                      left: `${marker.left}%`,
+                      top: `${marker.top}%`,
+                      transform: "translate(-50%, -90%)",
+                    }}
                   >
-                    {pos.equNo}
-                  </text>
-                </g>
-              </g>
-            ))}
-          </svg>
-        </div>
+                    <div className="relative flex flex-col items-center">
+                      <div
+                        className={`w-2 h-2 rounded-full animate-pulse ${marker.status === "MOVING" ? "" : "opacity-80"}`}
+                        style={{ background: color, boxShadow: `0 0 8px ${color}` }}
+                      />
+                      <svg viewBox="-28 -34 56 40" className="w-11 h-10 overflow-visible">
+                        <circle r="16" fill={color} opacity="0.18" className="animate-pulse" />
+                        <rect x="-14" y="-8" width="28" height="16" rx="4" fill={color} stroke="#1e293b" strokeWidth="2" />
+                        <rect x="2" y="-6" width="10" height="12" rx="2" fill="#0284c7" opacity="0.9" />
+                        <text
+                          textAnchor="middle"
+                          dominantBaseline="central"
+                          fill="white"
+                          fontSize="9"
+                          fontWeight="900"
+                          fontFamily="var(--font-mono)"
+                          transform={`rotate(${marker.heading})`}
+                        >
+                          {headingToArrow(marker.heading)}
+                        </text>
+                      </svg>
+                      <div className="mt-0.5 px-1.5 py-px rounded bg-[var(--bg-panel)]/90 border border-[var(--border)] text-[9px] font-mono font-black text-[var(--text-primary)] whitespace-nowrap">
+                        {marker.label}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
-        {/* Legend */}
-        <div className="absolute bottom-4 left-4 flex items-center gap-4 bg-[var(--bg-panel)]/90 backdrop-blur-sm border border-[var(--border)] rounded-lg px-4 py-2">
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded" style={{ background: "var(--accent-load)" }} />
-            <span className="text-[10px] font-mono font-bold text-[var(--text-secondary)]">Moving</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded" style={{ background: "var(--accent-reefer)" }} />
-            <span className="text-[10px] font-mono font-bold text-[var(--text-secondary)]">Idle</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded" style={{ background: "var(--accent-discharge)" }} />
-            <span className="text-[10px] font-mono font-bold text-[var(--text-secondary)]">Stopped</span>
-          </div>
-        </div>
+        {/* View toggle */}
+        {!layoutLoading && !layoutError && svg && (
+          <button
+            type="button"
+            onClick={() => setCameraView((v) => (v === "angled" ? "top" : "angled"))}
+            aria-label={cameraView === "angled" ? "Switch to top view" : "Switch to perspective view"}
+            aria-pressed={cameraView === "top"}
+            title={cameraView === "angled" ? "Switch to top view" : "Switch to perspective view"}
+            className="absolute right-4 top-4 z-20 flex h-9 w-9 items-center justify-center rounded-md border border-[var(--border)]/55 bg-[var(--bg-panel)]/60 text-[var(--text-primary)] shadow-sm backdrop-blur-sm transition-colors hover:bg-[var(--bg-header)]/75 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-blue)]"
+          >
+            {cameraView === "angled" ? <PerspectiveIcon /> : <TopViewIcon />}
+          </button>
+        )}
       </div>
     </div>
   );

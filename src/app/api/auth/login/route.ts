@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { mockLoginToken, mockUser, resolveDataMode } from "@/lib/mockData";
 
 // Simple in-memory rate limiter with cleanup
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
@@ -28,6 +29,18 @@ function checkRateLimit(ip: string): boolean {
 
   record.count++;
   return true;
+}
+
+function localLoginResponse(request: NextRequest) {
+  const response = NextResponse.json({ user: mockUser });
+  response.cookies.set("auth-token", mockLoginToken(), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: "/",
+    maxAge: 60 * 60 * 8,
+  });
+  return response;
 }
 
 export async function POST(request: NextRequest) {
@@ -61,12 +74,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const mode = resolveDataMode();
+    if (mode === "simulated") {
+      return localLoginResponse(request);
+    }
+
     const backendUrl = process.env.BACKEND_URL || "http://localhost:8080";
     const res = await fetch(`${backendUrl}/api/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username: sanitizedUsername, password: sanitizedPassword }),
     });
+
+    if (mode === "auto" && !res.ok) {
+      return localLoginResponse(request);
+    }
 
     if (!res.ok) {
       const error = await res.json().catch(() => ({ error: "Login failed" }));
@@ -94,6 +116,10 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (err) {
     console.error("Login error:", err);
+    const mode = resolveDataMode();
+    if (mode === "auto") {
+      return localLoginResponse(request);
+    }
     return NextResponse.json(
       { error: "Backend connection failed" },
       { status: 502 },

@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import MonitorHeader from "@/components/MonitorHeader";
 import type { YTPosition } from "@/lib/types";
+import { parseCorners, projectPositions, type LayoutCorners } from "@/lib/layoutProjection";
 
 const TRAIL_LENGTH = 20;
 
 interface YTWithTrail extends YTPosition {
   trail: { x: number; z: number }[];
+  _trackKey: string;
 }
 
 function headingToArrow(heading: number): string {
@@ -17,17 +19,57 @@ function headingToArrow(heading: number): string {
   return "◀";
 }
 
-function statusColor(status: string): string {
+function statusColor(status: string | undefined): string {
   if (status === "MOVING") return "var(--accent-load)";
   if (status === "IDLE") return "var(--accent-reefer)";
   return "var(--accent-discharge)";
 }
 
-function useYTPositionsWithTrail(terminalCode: string) {
+function useLayoutSvg(terminalCode: string) {
+  const [svg, setSvg] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    fetch(`/TerminalLayout_${terminalCode}.svg?t=${Date.now()}`)
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.text();
+      })
+      .then((text) => {
+        if (cancelled) return;
+        setSvg(text);
+        setLoading(false);
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        setError(err instanceof Error ? err.message : "Failed to load layout");
+        setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [terminalCode]);
+
+  const corners: LayoutCorners | null = useMemo(
+    () => (svg ? parseCorners(svg, terminalCode) : null),
+    [svg, terminalCode],
+  );
+
+  return { corners, error, loading };
+}
+
+function useYTPositionsWithTrail(
+  terminalCode: string,
+  corners: LayoutCorners | null,
+) {
   const [positions, setPositions] = useState<YTWithTrail[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const positionsRef = useRef<YTWithTrail[]>([]);
+  const trailMap = useRef<Map<string, { x: number; z: number }[]>>(new Map());
 
   const fetchData = useCallback(async () => {
     const controller = new AbortController();
@@ -43,21 +85,36 @@ function useYTPositionsWithTrail(terminalCode: string) {
       }
       const data: YTPosition[] = await res.json();
       const updated = data.map((pos) => {
-        const prevTrail = positionsRef.current.find((p) => p.equNo === pos.equNo)?.trail || [];
-        const newTrail = [...prevTrail, { x: pos.x, z: pos.z }].slice(-TRAIL_LENGTH);
-        return { ...pos, trail: newTrail };
+        const [proj] = projectPositions([pos], corners);
+        const trackKey = proj.key;
+        const prevTrail = trailMap.current.get(trackKey) ?? [];
+        const newTrail = [...prevTrail, { x: proj.x, z: proj.z }].slice(
+          -TRAIL_LENGTH,
+        );
+        trailMap.current.set(trackKey, newTrail);
+        return {
+          ...pos,
+          x: proj.x,
+          z: proj.z,
+          heading: proj.heading,
+          status: proj.status,
+          trail: newTrail,
+          _trackKey: trackKey,
+        } satisfies YTWithTrail;
       });
-      positionsRef.current = updated;
       setPositions(updated);
       setError(null);
       setLastUpdated(new Date());
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to fetch";
-      setError((err as Error)?.name === "AbortError" ? "Request timed out" : message);
+      const message =
+        err instanceof Error ? err.message : "Failed to fetch";
+      setError(
+        (err as Error)?.name === "AbortError" ? "Request timed out" : message,
+      );
     } finally {
       clearTimeout(timeout);
     }
-  }, [terminalCode]);
+  }, [terminalCode, corners]);
 
   useEffect(() => {
     fetchData();
@@ -74,7 +131,9 @@ export default function YTTrail({ terminalCode }: { terminalCode: string }) {
   const [dragging, setDragging] = useState(false);
   const dragStart = useRef({ x: 0, y: 0, ox: 0, oy: 0 });
 
-  const { positions, error: trackingError, lastUpdated } = useYTPositionsWithTrail(terminalCode);
+  const { corners, error: layoutError, loading: layoutLoading } = useLayoutSvg(terminalCode);
+  const { positions, error: trackingError, lastUpdated } =
+    useYTPositionsWithTrail(terminalCode, corners);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
@@ -97,10 +156,31 @@ export default function YTTrail({ terminalCode }: { terminalCode: string }) {
 
   const handleMouseUp = useCallback(() => setDragging(false), []);
 
-  const maxX = positions.length > 0 ? Math.max(...positions.map((p) => p.x)) : 1000;
-  const maxZ = positions.length > 0 ? Math.max(...positions.map((p) => p.z)) : 600;
+  const maxX = positions.length > 0 ? Math.max(...positions.map((p) => p.x ?? 0)) : 1000;
+  const maxZ = positions.length > 0 ? Math.max(...positions.map((p) => p.z ?? 0)) : 600;
   const svgW = Math.max(maxX * 1.1, 800);
   const svgH = Math.max(maxZ * 1.1, 500);
+
+  if (layoutLoading && !positions.length) {
+    return (
+      <div className="h-full w-full flex flex-col overflow-hidden bg-[var(--bg-page)]">
+        <MonitorHeader
+          title={`${terminalCode} YT Trail`}
+          stats={undefined}
+          lastUpdated={null}
+          error={null}
+        />
+        <div className="flex-1 min-h-0 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-8 h-8 border-2 border-[var(--border)] border-t-[var(--accent-blue)] rounded-full animate-spin mx-auto mb-3" />
+            <p className="text-xs font-mono uppercase tracking-widest text-[var(--text-tertiary)]">
+              Loading Terminal Layout
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full w-full flex flex-col overflow-hidden bg-[var(--bg-page)]">
@@ -110,12 +190,6 @@ export default function YTTrail({ terminalCode }: { terminalCode: string }) {
         lastUpdated={lastUpdated}
         error={trackingError}
       />
-      <div className="flex items-center justify-center gap-2 py-1 bg-[var(--bg-panel)] border-b border-[var(--border)] shrink-0">
-        <button onClick={() => setScale((s) => Math.min(3, s + 0.2))} className="px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider rounded border border-[var(--border-light)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-nav-hover)] active:scale-95 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">Zoom +</button>
-        <span className="text-[10px] font-mono font-bold text-[var(--text-secondary)] px-2">{Math.round(scale * 100)}%</span>
-        <button onClick={() => setScale((s) => Math.max(0.3, s - 0.2))} className="px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider rounded border border-[var(--border-light)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-nav-hover)] active:scale-95 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">Zoom -</button>
-        <button onClick={() => { setScale(1); setOffset({ x: 0, y: 0 }); }} className="px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider rounded border border-[var(--border-light)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-nav-hover)] active:scale-95 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">Reset</button>
-      </div>
       <div
         className="flex-1 min-h-0 relative overflow-hidden cursor-grab active:cursor-grabbing"
         onWheel={handleWheel}
@@ -123,8 +197,20 @@ export default function YTTrail({ terminalCode }: { terminalCode: string }) {
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onDoubleClick={() => {
+          setScale(1);
+          setOffset({ x: 0, y: 0 });
+        }}
         style={{ background: "var(--bg-vessel-viz)" }}
       >
+        {layoutError && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-[var(--bg-page)]">
+            <div className="text-center">
+              <p className="text-sm font-mono text-red-500 mb-2">Failed to load terminal layout</p>
+              <p className="text-xs font-mono text-[var(--text-tertiary)]">{layoutError}</p>
+            </div>
+          </div>
+        )}
         <div
           className="absolute inset-0"
           style={{
@@ -140,70 +226,57 @@ export default function YTTrail({ terminalCode }: { terminalCode: string }) {
               </pattern>
             </defs>
             <rect width="100%" height="100%" fill="url(#grid-trail)" />
-            {positions.map((pos) => (
-              <g key={pos.equNo}>
-                {pos.trail.length > 1 && (
-                  <polyline
-                    points={pos.trail.map((t) => `${t.x},${t.z}`).join(" ")}
-                    fill="none"
-                    stroke={statusColor(pos.status)}
+            {positions.map((pos) => {
+              const x = pos.x ?? 0;
+              const z = pos.z ?? 0;
+              const color = statusColor(pos.status);
+              return (
+                <g key={pos._trackKey}>
+                  {pos.trail.length > 1 && (
+                    <polyline
+                      points={pos.trail.map((t) => `${t.x},${t.z}`).join(" ")}
+                      fill="none"
+                      stroke={color}
+                      strokeWidth="1.5"
+                      opacity="0.4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  )}
+                  <circle cx={x} cy={z} r="18" fill={color} opacity="0.15" />
+                  <rect
+                    x={x - 10} y={z - 6} width="20" height="12" rx="3"
+                    fill={color}
+                    stroke="var(--bg-vessel-viz)"
                     strokeWidth="1.5"
-                    opacity="0.4"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                    opacity="0.9"
                   />
-                )}
-                <circle cx={pos.x} cy={pos.z} r="18" fill={statusColor(pos.status)} opacity="0.15" />
-                <rect
-                  x={pos.x - 10} y={pos.z - 6} width="20" height="12" rx="3"
-                  fill={statusColor(pos.status)}
-                  stroke="var(--bg-vessel-viz)"
-                  strokeWidth="1.5"
-                  opacity="0.9"
-                />
-                <text
-                  x={pos.x} y={pos.z}
-                  textAnchor="middle"
-                  dominantBaseline="central"
-                  fill="white"
-                  fontSize="8"
-                  fontWeight="bold"
-                  fontFamily="monospace"
-                  transform={`rotate(${pos.heading} ${pos.x} ${pos.z})`}
-                >
-                  {headingToArrow(pos.heading)}
-                </text>
-                <text
-                  x={pos.x} y={pos.z + 16}
-                  textAnchor="middle"
-                  fill="var(--text-tertiary)"
-                  fontSize="7"
-                  fontFamily="monospace"
-                  fontWeight="bold"
-                >
-                  {pos.equNo}
-                </text>
-              </g>
-            ))}
+                  <text
+                    x={x} y={z}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fill="white"
+                    fontSize="8"
+                    fontWeight="bold"
+                    fontFamily="monospace"
+                    transform={`rotate(${pos.heading ?? 0} ${x} ${z})`}
+                  >
+                    {headingToArrow(pos.heading ?? 0)}
+                  </text>
+                  <text
+                    x={x} y={z + 16}
+                    textAnchor="middle"
+                    fill="var(--text-tertiary)"
+                    fontSize="7"
+                    fontFamily="monospace"
+                    fontWeight="bold"
+                  >
+                    {pos._trackKey}
+                  </text>
+                </g>
+              );
+            })}
           </svg>
-        </div>
-        <div className="absolute bottom-4 left-4 flex items-center gap-4 bg-[var(--bg-panel)]/90 backdrop-blur-sm border border-[var(--border)] rounded-lg px-4 py-2">
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded" style={{ background: "var(--accent-load)" }} />
-            <span className="text-[10px] font-mono font-bold text-[var(--text-secondary)]">Moving</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded" style={{ background: "var(--accent-reefer)" }} />
-            <span className="text-[10px] font-mono font-bold text-[var(--text-secondary)]">Idle</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded" style={{ background: "var(--accent-discharge)" }} />
-            <span className="text-[10px] font-mono font-bold text-[var(--text-secondary)]">Stopped</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-8 h-0.5 rounded" style={{ background: "var(--accent-load)", opacity: 0.4 }} />
-            <span className="text-[10px] font-mono font-bold text-[var(--text-secondary)]">Trail</span>
-          </div>
         </div>
       </div>
     </div>

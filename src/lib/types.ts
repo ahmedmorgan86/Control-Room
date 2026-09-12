@@ -11,6 +11,16 @@ export interface VesselData {
   vesselCode: string;
   callYear: number;
   callSeq: number;
+  vesselName: string;
+  voyageNumber: string;
+  arrivalTime?: string;
+  gmph: number;
+  totalMoves: number;
+  totalDone: number;
+  loadingDone: number;
+  loadingTotal: number;
+  dischargingDone: number;
+  dischargingTotal: number;
   cranes: CraneData[];
 }
 
@@ -19,6 +29,11 @@ export interface CraneData {
   movesDone: number;
   movesTotal: number;
   layoutRank: number;
+  loadingDone: number;
+  loadingTotal: number;
+  dischargingDone: number;
+  dischargingTotal: number;
+  mph: number;
 }
 
 export interface YardBlock {
@@ -129,11 +144,17 @@ export interface EquipmentData {
 export type EquType = "QC" | "RTG" | "YT" | "RS" | "TL" | "SUPPORT" | "UNK";
 
 export interface YTPosition {
-  equNo: string;
-  x: number;
-  y: number;
-  z: number;
-  heading: number;
+  equNo?: string;
+  truckId?: string;
+  x?: number;
+  y?: number;
+  z?: number;
+  heading?: number;
   containerNo?: string;
-  status: YTStatus | string;
+  status?: YTStatus | string;
+  latitude?: number;
+  longitude?: number;
+  previousLatitude?: number;
+  previousLongitude?: number;
+  updateTime?: string;
 }
